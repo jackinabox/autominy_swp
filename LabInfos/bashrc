@@ -1,7 +1,0 @@
-Wichtige Einträge für die bashrc
-
-# um mit den Autos im Lab zu koennen, wenn der ROS Master auf dem Auto laeuft
-export ROS_MASTER_URI=http://192.168.43.[Nummer des Autos]:11311
-export ROS_IP=[eigene IP im 'ROS' WLAN]
-export ROS_HOSTNAME=[eigene IP im 'ROS' WLAN]
-

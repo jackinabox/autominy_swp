@@ -12,7 +12,11 @@ namespace emergency_stop {
         if (config.break_distance_based_on_speed) {
             breakDistance = std::pow(currentSpeed, 2) / 2.0 * config.negative_acceleration;
         }
-
+        if (currentSpeed==0){
+            emergencyStop = false;
+            return; //wenn wir nicht fahren, brauchen wir nicht bremsen
+                    //und können auch keine Bremszeit berechnen
+        }
         auto angleIncrement = scan->angle_increment;
         if (wantedSpeed >= 0) {    //forward.
             auto frontAngle = config.angle_front / 2.0;

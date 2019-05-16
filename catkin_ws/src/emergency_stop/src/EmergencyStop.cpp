@@ -20,7 +20,7 @@ namespace emergency_stop {
             auto end = static_cast<int>(frontAngle / angleIncrement);
 
             for (int i = 0; i < scan->ranges.size() && i < end; i++) {
-                if (scan->ranges[i] <= breakDistance + config.forward_minimum_distance &&
+                if ((scan->ranges[i]-config.forward_minimum_distance)/(2*std::pow(currentSpeed,2)) <= 0 &&
                     scan->ranges[i] > config.forward_minimum_distance) {
                     emergencyStop = true;
                     return;
@@ -30,7 +30,7 @@ namespace emergency_stop {
             start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
             end = scan->ranges.size();
             for (int k = start; k < end; k++) {
-                if (scan->ranges[k] <= breakDistance + config.forward_minimum_distance &&
+                if ((scan->ranges[k]-config.forward_minimum_distance)/(2*std::pow(currentSpeed,2)) <= 0 &&
                     scan->ranges[k] > config.forward_minimum_distance) {
                     emergencyStop = true;
                     return;
@@ -44,7 +44,7 @@ namespace emergency_stop {
             int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
             for (int j = start; j < end && j < scan->ranges.size(); j++) {
                 // we might see the camera in the laser scan
-                if (scan->ranges[j] <= (breakDistance + config.reverse_minimum_distance) &&
+                if ((scan->ranges[j]-config.reverse_minimum_distance)/(2*std::pow(currentSpeed,2)) <= 0 &&
                     scan->ranges[j] > config.reverse_minimum_distance) {
                     emergencyStop = true;
                     return;

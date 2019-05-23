@@ -12,50 +12,81 @@ namespace emergency_stop {
         if (config.break_distance_based_on_speed) {
             breakDistance = std::pow(currentSpeed, 2) / 2.0 * config.negative_acceleration;
         }
-        if (currentSpeed==0){
-            emergencyStop = false;
-            return; //wenn wir nicht fahren, brauchen wir nicht bremsen
-                    //und können auch keine Bremszeit berechnen
-        }
+
+
+        emergencyStop = false;
         auto angleIncrement = scan->angle_increment;
         if (wantedSpeed >= 0) {    //forward.
             auto frontAngle = config.angle_front / 2.0;
+
+            // front right
             auto start = 0;
             auto end = static_cast<int>(frontAngle / angleIncrement);
 
+            auto minDistance=scan->ranges[0]-config.forward_minimum_distance;
             for (int i = 0; i < scan->ranges.size() && i < end; i++) {
-                if ((scan->ranges[i]-config.forward_minimum_distance)/(2*std::pow(currentSpeed,2)) <= 0 &&
-                    scan->ranges[i] > config.forward_minimum_distance) {
-                    emergencyStop = true;
-                    return;
+                if ((scan->ranges[i]-config.forward_minimum_distance)<minDistance && scan->ranges[i]>config.forward_minimum_distance){
+                    minDistance=scan->ranges[i]-config.forward_minimum_distance;
                 }
             }
 
+            // front left
             start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
             end = scan->ranges.size();
             for (int k = start; k < end; k++) {
-                if ((scan->ranges[k]-config.forward_minimum_distance)/(2*std::pow(currentSpeed,2)) <= 1.1 &&
-                    scan->ranges[k] > config.forward_minimum_distance) {
-                    emergencyStop = true;
-                    return;
+                if ((scan->ranges[k]-config.forward_minimum_distance)<minDistance && scan->ranges[k]>config.forward_minimum_distance){
+                    minDistance=scan->ranges[k]-config.forward_minimum_distance;
                 }
             }
+
+            if (currentSpeed!=0){
+                if((minDistance)/(2*std::pow(currentSpeed, 2)) <= 1.0 || minDistance <= break_distance){
+                    emergencyStop = true;
+                }
+            }
+            /*
+            if (currentSpeed==0){
+                safeSpeed=std::sqrt((minDistance)/2.2);
+                emergencyStop = true;
+            }
+            else if ((minDistance)/(2*std::pow(currentSpeed,2)) <= 1.1) {
+                safeSpeed=std::sqrt((minDistance)/2.2);
+                emergencyStop = true;
+            }
+            */
+
         }
 
-        if (wantedSpeed < 0) { //backward.
+        else{ //(wantedSpeed < 0) backward.
             auto backAngle = config.angle_back / 2.0;
             int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
             int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
+            // back right to back left
+            auto minDistance=scan->ranges[0]-config.reverse_minimum_distance;
             for (int j = start; j < end && j < scan->ranges.size(); j++) {
                 // we might see the camera in the laser scan
-                if ((scan->ranges[j]-config.reverse_minimum_distance)/(2*std::pow(currentSpeed,2)) <= 1.1 &&
-                    scan->ranges[j] > config.reverse_minimum_distance) {
-                    emergencyStop = true;
-                    return;
+                if ((scan->ranges[j]-config.reverse_minimum_distance)<minDistance && scan->ranges[j] > config.reverse_minimum_distance){
+                    minDistance=scan->ranges[j]-config.reverse_minimum_distance;
                 }
             }
+
+            if (currentSpeed!=0){
+                if((minDistance)/(2*std::pow(currentSpeed, 2)) <= 1.0 || minDistance <= break_distance){
+                    emergencyStop = true;
+                }
+            }
+
+            /*
+            if (currentSpeed==0){
+                safeSpeed=std::sqrt((minDistance)/2.2);
+                emergencyStop = true;
+            }
+            else if ((minDistance)/(2*std::pow(currentSpeed,2)) <= 1.1) {
+                safeSpeed=std::sqrt((minDistance)/2.2);
+                emergencyStop = true;
+            }
+             */
         }
-        emergencyStop = false;
     }
 
     void EmergencyStop::setCurrentSpeed(const autominy_msgs::SpeedConstPtr &speed) {
@@ -69,6 +100,13 @@ namespace emergency_stop {
     autominy_msgs::SpeedCommand EmergencyStop::getSafeSpeed() {
         autominy_msgs::SpeedCommand msg;
 
+        /*
+        if (emergencyStop && safeSpeed < wantedSpeed) {
+            msg.value = safeSpeed;
+        } else {
+            msg.value = wantedSpeed;
+        }
+         */
         if (emergencyStop) {
             msg.value = 0;
         } else {

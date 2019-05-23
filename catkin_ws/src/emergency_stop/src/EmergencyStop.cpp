@@ -37,7 +37,7 @@ namespace emergency_stop {
 
             if (currentSpeed==0){
                 safeSpeed=std::sqrt((minDistance)/2.2)
-                emergencyStop = false;
+                emergencyStop = true;
             }
             else if ((minDistance)/(2*std::pow(currentSpeed,2)) <= 1.1) {
                 safeSpeed=std::sqrt((minDistance)/2.2)
@@ -61,7 +61,7 @@ namespace emergency_stop {
 
             if (currentSpeed==0){
                 safeSpeed=std::sqrt((minDistance)/2.2)
-                emergencyStop = false;
+                emergencyStop = true;
             }
             else if ((minDistance)/(2*std::pow(currentSpeed,2)) <= 1.1) {
                 safeSpeed=std::sqrt((minDistance)/2.2)

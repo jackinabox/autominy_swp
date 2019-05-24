@@ -9,12 +9,8 @@ namespace emergency_stop {
 
     void EmergencyStop::checkEmergencyStop(const sensor_msgs::LaserScanConstPtr &scan) {
         double breakDistance = config.break_distance;
-        if (config.break_distance_based_on_speed) {
-            breakDistance = std::pow(currentSpeed, 2) / 2.0 * config.negative_acceleration;
-        }
-
-
         emergencyStop = false;
+
         auto angleIncrement = scan->angle_increment;
         if (wantedSpeed >= 0) {    //forward.
             auto frontAngle = config.angle_front / 2.0;
@@ -23,8 +19,8 @@ namespace emergency_stop {
             auto start = 0;
             auto end = static_cast<int>(frontAngle / angleIncrement);
 
-            auto minDistance=scan->ranges[0]-config.forward_minimum_distance;
-            for (int i = 0; i < scan->ranges.size() && i < end; i++) {
+            auto minDistance=scan->ranges[0]-config.forward_minimum_distance; // init minDist forward
+            for (int i = 1; i < scan->ranges.size() && i < end; i++) {
                 if ((scan->ranges[i]-config.forward_minimum_distance)<minDistance && scan->ranges[i]>config.forward_minimum_distance){
                     minDistance=scan->ranges[i]-config.forward_minimum_distance;
                 }
@@ -40,7 +36,12 @@ namespace emergency_stop {
             }
 
             if (currentSpeed!=0){
-                if((minDistance)/(2*std::pow(currentSpeed, 2)) <= 1.0 || minDistance <= break_distance){
+                if((minDistance)/(2*std::pow(currentSpeed, 2)) <= 1.1 || minDistance <= breakDistance){
+                    emergencyStop = true;
+                }
+            }
+            else{
+                if (minDistance <= breakDistance){
                     emergencyStop = true;
                 }
             }
@@ -62,7 +63,7 @@ namespace emergency_stop {
             int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
             int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
             // back right to back left
-            auto minDistance=scan->ranges[0]-config.reverse_minimum_distance;
+            auto minDistance=scan->ranges[start]-config.reverse_minimum_distance; // init backward minDist
             for (int j = start; j < end && j < scan->ranges.size(); j++) {
                 // we might see the camera in the laser scan
                 if ((scan->ranges[j]-config.reverse_minimum_distance)<minDistance && scan->ranges[j] > config.reverse_minimum_distance){
@@ -71,7 +72,12 @@ namespace emergency_stop {
             }
 
             if (currentSpeed!=0){
-                if((minDistance)/(2*std::pow(currentSpeed, 2)) <= 1.0 || minDistance <= break_distance){
+                if((minDistance)/(2*std::pow(currentSpeed, 2)) <= 1.1 || minDistance <= breakDistance){
+                    emergencyStop = true;
+                }
+            }
+            else{
+                if (minDistance <= breakDistance){
                     emergencyStop = true;
                 }
             }

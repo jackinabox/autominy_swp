@@ -42,5 +42,9 @@ namespace emergency_stop {
         double safeSpeed = 0.0;
         int16_t wantedSpeed = 0;
         bool emergencyStop = true;
+
+        double calculateSafeSpeed(double distance,double deacceleration,double targetQuotient);
+        double safeDistanceQuotient(double distance,double deacceleration, double currentSpeed);
+
     };
 }

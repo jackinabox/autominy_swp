@@ -8,21 +8,28 @@ namespace emergency_stop {
     void EmergencyStop::setConfig(emergency_stop::EmergencyStopConfig &config) { this->config = config; }
 
     void EmergencyStop::checkEmergencyStop(const sensor_msgs::LaserScanConstPtr &scan) {
-        double breakDistance = config.break_distance;
+
         emergencyStop = false;
 
+        double breakDistance = config.break_distance;
+        double targetQuotient = config.target_quotient;
+        double negAcc = config.negative_acceleration;
+        double maxLookahead = config.maximum_lookahead_distance;
+
+        auto minDistance = std::numeric_limits<double>::infinity(); // init minDist
         auto angleIncrement = scan->angle_increment;
+
         if (wantedSpeed >= 0) {    //forward.
             auto frontAngle = config.angle_front / 2.0;
 
             // front right
             auto start = 0;
             auto end = static_cast<int>(frontAngle / angleIncrement);
-
-            auto minDistance=scan->ranges[0]-config.forward_minimum_distance; // init minDist forward
-            for (int i = 1; i < scan->ranges.size() && i < end; i++) {
-                if ((scan->ranges[i]-config.forward_minimum_distance)<minDistance && scan->ranges[i]>config.forward_minimum_distance){
-                    minDistance=scan->ranges[i]-config.forward_minimum_distance;
+            for (int i = start; i < scan->ranges.size() && i < end; i++) {
+                auto dist = getDistanceToCar(scan->ranges[i], i);
+                if (dist < maxLookahead && dist > 0 && dist < minDistance)
+                {
+                    minDistance = dist;
                 }
             }
 
@@ -30,77 +37,69 @@ namespace emergency_stop {
             start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
             end = scan->ranges.size();
             for (int k = start; k < end; k++) {
-                if ((scan->ranges[k]-config.forward_minimum_distance)<minDistance && scan->ranges[k]>config.forward_minimum_distance){
-                    minDistance=scan->ranges[k]-config.forward_minimum_distance;
+                auto dist = getDistanceToCar(scan->ranges[k], k);
+                if (dist < maxLookahead && dist > 0 && dist < minDistance)
+                {
+                    minDistance = dist;
                 }
             }
 
-            if (currentSpeed!=0){
-                if((minDistance)/(2*std::pow(currentSpeed, 2)) <= 1.1 || minDistance <= breakDistance){
-                    emergencyStop = true;
-                }
-            }
-            else{
-                if (minDistance <= breakDistance){
-                    emergencyStop = true;
-                }
-            }
-            /*
-            if (currentSpeed==0){
-                safeSpeed=std::sqrt((minDistance)/2.2);
-                emergencyStop = true;
-            }
-            else if ((minDistance)/(2*std::pow(currentSpeed,2)) <= 1.1) {
-                safeSpeed=std::sqrt((minDistance)/2.2);
-                emergencyStop = true;
-            }
-            */
-
-        }
-
-        else{ //(wantedSpeed < 0) backward.
+        } else { //(wantedSpeed < 0) backward.
             auto backAngle = config.angle_back / 2.0;
             int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
             int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
             // back right to back left
-            auto minDistance=scan->ranges[start]-config.reverse_minimum_distance; // init backward minDist
             for (int j = start; j < end && j < scan->ranges.size(); j++) {
                 // we might see the camera in the laser scan
-                if ((scan->ranges[j]-config.reverse_minimum_distance)<minDistance && scan->ranges[j] > config.reverse_minimum_distance){
-                    minDistance=scan->ranges[j]-config.reverse_minimum_distance;
+                auto dist = getDistanceToCar(scan->ranges[j], j);
+                if (dist < maxLookahead && dist > 0 && dist < minDistance)
+                {
+                    minDistance = dist;
                 }
             }
+        }
 
-            if (currentSpeed!=0){
-                if((minDistance)/(2*std::pow(currentSpeed, 2)) <= 1.1 || minDistance <= breakDistance){
-                    emergencyStop = true;
-                }
-            }
-            else{
-                if (minDistance <= breakDistance){
-                    emergencyStop = true;
-                }
-            }
-
-            /*
-            if (currentSpeed==0){
-                safeSpeed=std::sqrt((minDistance)/2.2);
+        // based on speed, distance and deceleration, decide if EmergencyStop
+        if (currentSpeed != 0) {
+            if (safeDistanceQuotient(minDistance, negAcc, currentSpeed) <= targetQuotient ||
+                minDistance <= breakDistance)
+            {
                 emergencyStop = true;
             }
-            else if ((minDistance)/(2*std::pow(currentSpeed,2)) <= 1.1) {
-                safeSpeed=std::sqrt((minDistance)/2.2);
+        } else {
+            if (minDistance <= breakDistance) {
                 emergencyStop = true;
             }
-             */
+        }
+
+        /*
+        if (currentSpeed==0){
+            safeSpeed=std::sqrt((minDistance)/2.2);
+            emergencyStop = true;
+        }
+        else if ((minDistance)/(2*std::pow(currentSpeed,2)) <= 1.1) {
+            safeSpeed=std::sqrt((minDistance)/2.2);
+            emergencyStop = true;
+        }
+         */
+
+    }
+
+    double EmergencyStop::getDistanceToCar(double distanceToLidar, int deg_step) {
+        if(deg_step < 90 || deg_step > 270){
+            return (distanceToLidar - config.forward_minimum_distance);
+        }
+        else{
+            return (distanceToLidar - config.reverse_minimum_distance);
         }
     }
 
-    double EmergencyStop::calculateSafeSpeed(double distance,double deacceleration, double targetQuotient){
-        return std::sqrt((minDistance)*deacceleration/targetQuotient);
+    double EmergencyStop::calculateSafeSpeed(double distance, double deacceleration, double targetQuotient) {
+        return std::sqrt((minDistance) * deacceleration / targetQuotient);
     }
 
-    double EmergencyStop::safeDistanceQuotient(double distance,double deacceleration, double currentSpeed){
-        return distance*deacceleration/std::pow(currentSpeed,2);
+    double EmergencyStop::safeDistanceQuotient(double distance, double deacceleration, double currentSpeed) {
+        return distance * deacceleration / std::pow(currentSpeed, 2);
     }
 
     void EmergencyStop::setCurrentSpeed(const autominy_msgs::SpeedConstPtr &speed) {

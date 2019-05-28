@@ -4,6 +4,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <autominy_msgs/Speed.h>
 #include <autominy_msgs/SpeedCommand.h>
+#include <limits>
 
 namespace emergency_stop {
 
@@ -43,7 +44,10 @@ namespace emergency_stop {
         int16_t wantedSpeed = 0;
         bool emergencyStop = true;
 
-        double calculateSafeSpeed(double distance,double deacceleration,double targetQuotient);
-        double safeDistanceQuotient(double distance,double deacceleration, double currentSpeed);
+        double getDistanceToCar(double distanceToLidar, int deg_step);
+
+        double calculateSafeSpeed(double distance, double deacceleration, double targetQuotient);
+
+        double safeDistanceQuotient(double distance, double deacceleration, double currentSpeed);
     };
 }

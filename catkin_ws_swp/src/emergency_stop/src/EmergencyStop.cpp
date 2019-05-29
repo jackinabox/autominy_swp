@@ -95,7 +95,7 @@ namespace emergency_stop {
     }
 
     double EmergencyStop::calculateSafeSpeed(double distance, double deacceleration, double targetQuotient) {
-        return std::sqrt((minDistance) * deacceleration / targetQuotient);
+        return std::sqrt((distance) * deacceleration / targetQuotient);
     }
 
     double EmergencyStop::safeDistanceQuotient(double distance, double deacceleration, double currentSpeed) {

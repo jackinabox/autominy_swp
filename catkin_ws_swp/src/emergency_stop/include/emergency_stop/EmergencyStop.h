@@ -40,7 +40,8 @@ namespace emergency_stop {
         /// dynamic config attribute
         emergency_stop::EmergencyStopConfig config;
         double currentSpeed = 0.0;
-        //double safeSpeed = 0.0;
+        double safeSpeedSI = 0.0;
+        int16_t safeSpeedPWM = 0;
         int16_t wantedSpeed = 0;
         bool emergencyStop = true;
 

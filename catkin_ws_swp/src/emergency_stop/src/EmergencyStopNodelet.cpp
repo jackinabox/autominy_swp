@@ -36,6 +36,7 @@ namespace emergency_stop {
             emergencyStop = std::make_shared<EmergencyStop>();
 
             speedPublisher = pnh.advertise<autominy_msgs::SpeedCommand>("speed", 1);
+            safeSpeedPublisher = pnh.advertise<autominy_msgs::SpeedCommand>("safeSpeed", 1);
             scanSubscriber = pnh.subscribe("scan", 1, &EmergencyStopNodelet::onScan, this, ros::TransportHints().tcpNoDelay());
             wantedSpeedSubscriber = pnh.subscribe("wanted_speed", 1, &EmergencyStopNodelet::onWantedSpeed, this, ros::TransportHints().tcpNoDelay());
             currentSpeedSubscriber = pnh.subscribe("carstate/speed", 1, &EmergencyStopNodelet::onCurrentSpeed, this, ros::TransportHints().tcpNoDelay());
@@ -79,6 +80,7 @@ namespace emergency_stop {
 
         /// publisher
         ros::Publisher speedPublisher;
+        ros::Publisher safeSpeedPublisher;
 
         /// pointer to dynamic reconfigure service
         boost::shared_ptr<dynamic_reconfigure::Server<emergency_stop::EmergencyStopConfig> > config_server_;

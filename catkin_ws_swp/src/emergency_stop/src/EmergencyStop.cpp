@@ -62,11 +62,6 @@ namespace emergency_stop {
         // based on speed, distance and deceleration, decide if EmergencyStop
         if (minDistance <= breakDistance) {
             safeSpeedPWM = 0;
-            /*
-            autominy_msgs::SpeedCommand msg;
-            msg.value = safeSpeedPWM;
-            safeSpeedPublisher.publish(msg);
-            */
             emergencyStop = true;
             return;
         }
@@ -75,11 +70,6 @@ namespace emergency_stop {
             auto speedQuotient = safeSpeedSI / currentSpeed;
             safeSpeedPWM = static_cast<int16_t>(safeSpeedPWM * speedQuotient);
             //cout << safeSpeedPWM;
-            /*
-            autominy_msgs::SpeedCommand msg;
-            msg.value = safeSpeedPWM;
-            safeSpeedPublisher.publish(msg);
-            */
             emergencyStop = true;
             return;
         }
@@ -117,6 +107,12 @@ namespace emergency_stop {
     }
 
     autominy_msgs::SpeedCommand EmergencyStop::getSafeSpeed() {
+        autominy_msgs::SpeedCommand msg;
+        msg.value = safeSpeedPWM;
+        return msg;
+    }
+
+    autominy_msgs::SpeedCommand EmergencyStop::getSpeedToPublish() {
         autominy_msgs::SpeedCommand msg;
         if (emergencyStop && safeSpeedPWM < wantedSpeed) {
             msg.value = safeSpeedPWM;

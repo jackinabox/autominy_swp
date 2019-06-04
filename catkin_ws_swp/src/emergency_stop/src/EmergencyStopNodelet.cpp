@@ -54,7 +54,8 @@ namespace emergency_stop {
          */
         void onScan(sensor_msgs::LaserScanConstPtr const &msg) {
             emergencyStop->checkEmergencyStop(msg);
-            speedPublisher.publish(emergencyStop->getSafeSpeed());
+            speedPublisher.publish(emergencyStop->getSpeedToPublish());
+            safeSpeedPublisher.publish(emergencyStop->getSafeSpeed());
         }
 
         void onCurrentSpeed(autominy_msgs::SpeedConstPtr const &msg) {

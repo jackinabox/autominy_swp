@@ -36,6 +36,8 @@ namespace emergency_stop {
 
         autominy_msgs::SpeedCommand getSafeSpeed();
 
+        autominy_msgs::SpeedCommand getSpeedToPublish();
+
     private:
         /// dynamic config attribute
         emergency_stop::EmergencyStopConfig config;

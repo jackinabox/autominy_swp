@@ -114,7 +114,7 @@ namespace emergency_stop {
 
     autominy_msgs::SpeedCommand EmergencyStop::getSpeedToPublish() {
         autominy_msgs::SpeedCommand msg;
-        if (emergencyStop && safeSpeedPWM < wantedSpeed) {
+        if (emergencyStop && abs(safeSpeedPWM) < abs(wantedSpeed)) {
             msg.value = safeSpeedPWM;
         } else {
             msg.value = wantedSpeed;

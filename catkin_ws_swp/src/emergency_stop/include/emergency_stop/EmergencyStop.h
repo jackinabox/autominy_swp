@@ -4,6 +4,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <autominy_msgs/Speed.h>
 #include <autominy_msgs/SpeedCommand.h>
+#include <std_msgs/Float32.h>
 #include <limits>
 
 namespace emergency_stop {
@@ -38,9 +39,12 @@ namespace emergency_stop {
 
         autominy_msgs::SpeedCommand getSpeedToPublish();
 
+        std_msgs::Float32 getDistanceToObstacle();
+
     private:
         /// dynamic config attribute
         emergency_stop::EmergencyStopConfig config;
+        double obstacleDistance;
         double currentSpeed = 0.0;
         double safeSpeedSI = 0.0;
         int16_t safeSpeedPWM = 0;

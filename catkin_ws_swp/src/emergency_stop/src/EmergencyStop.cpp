@@ -13,7 +13,7 @@ namespace emergency_stop {
             safeSpeedPWM = wantedSpeed;
         }
 
-        double breakDistance = config.break_distance;
+        double stopDistance = config.stop_distance;
         double targetQuotient = config.target_quotient;
         double negAcc = config.negative_acceleration;
         double maxLookahead = config.maximum_lookahead_distance;
@@ -22,7 +22,7 @@ namespace emergency_stop {
         auto minDistance = std::numeric_limits<double>::infinity(); // init minDist
         auto angleIncrement = scan->angle_increment;
 
-        if (wantedSpeed >= 0) {    //forward.
+        if (wantedSpeed >= 0) {    //forward
             auto frontAngle = config.angle_front / 2.0;
 
             // front right
@@ -45,7 +45,7 @@ namespace emergency_stop {
                 }
             }
 
-        } else { //(wantedSpeed < 0) backward.
+        } else { //(wantedSpeed < 0) backward
             auto backAngle = config.angle_back / 2.0;
             int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
             int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
@@ -59,8 +59,10 @@ namespace emergency_stop {
             }
         }
 
+        obstacleDistance = minDistance;
+        //ToDo: integrate
         // based on speed, distance and deceleration, decide if EmergencyStop
-        if (minDistance <= breakDistance) {
+        if (minDistance <= stopDistance) {
             safeSpeedPWM = 0;
             emergencyStop = true;
             return;
@@ -106,6 +108,12 @@ namespace emergency_stop {
         wantedSpeed = speed->value;
     }
 
+    std_msgs::Float32 EmergencyStop::getDistanceToObstacle() {
+        std_msgs::Float32 msg;
+        msg.value = obstacleDistance;
+        return msg;
+    }
+
     autominy_msgs::SpeedCommand EmergencyStop::getSafeSpeed() {
         autominy_msgs::SpeedCommand msg;
         msg.value = safeSpeedPWM;
@@ -117,7 +125,7 @@ namespace emergency_stop {
         if (emergencyStop && abs(safeSpeedPWM) < abs(wantedSpeed)) {
             msg.value = safeSpeedPWM;
         } else {
-            msg.value = wantedSpeed;
+            msg.value = wantedSpeed * std::clamp(obstacleDistance/config.startup_damp_range, 0, 1); // dampen start up
         }
         return msg;
     }

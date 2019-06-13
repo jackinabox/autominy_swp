@@ -60,7 +60,6 @@ namespace emergency_stop {
         }
 
         obstacleDistance = minDistance;
-        //ToDo: integrate
         // based on speed, distance and deceleration, decide if EmergencyStop
         if (minDistance <= stopDistance) {
             safeSpeedPWM = 0;
@@ -71,7 +70,6 @@ namespace emergency_stop {
             safeSpeedSI = calculateSafeSpeed(minDistance, negAcc, targetQuotient);
             auto speedQuotient = safeSpeedSI / currentSpeed;
             safeSpeedPWM = static_cast<int16_t>(safeSpeedPWM * speedQuotient);
-            //cout << safeSpeedPWM;
             emergencyStop = true;
             return;
         }
@@ -110,7 +108,7 @@ namespace emergency_stop {
 
     std_msgs::Float32 EmergencyStop::getDistanceToObstacle() {
         std_msgs::Float32 msg;
-        msg.value = obstacleDistance;
+        msg.data = static_cast<float>(obstacleDistance); // msg.value =
         return msg;
     }
 
@@ -125,7 +123,9 @@ namespace emergency_stop {
         if (emergencyStop && abs(safeSpeedPWM) < abs(wantedSpeed)) {
             msg.value = safeSpeedPWM;
         } else {
-            msg.value = wantedSpeed * std::clamp(obstacleDistance/config.startup_damp_range, 0, 1); // dampen start up
+            msg.value = wantedSpeed *
+                    boost::algorithm::clamp(obstacleDistance / (config.startup_damp_range + std::sqrt(wantedSpeed/1000)), 0, 1); // dampen start up
+                    //std::pow(boost::algorithm::clamp(obstacleDistance / ((boost::algorithm::clamp(wantedSpeed, 200, 1000)/200) - 0.5), 0, 1), 2); // dampen start up
         }
         return msg;
     }

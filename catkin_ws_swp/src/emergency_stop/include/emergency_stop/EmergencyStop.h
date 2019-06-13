@@ -6,6 +6,7 @@
 #include <autominy_msgs/SpeedCommand.h>
 #include <std_msgs/Float32.h>
 #include <limits>
+#include <boost/algorithm/clamp.hpp>
 
 namespace emergency_stop {
 

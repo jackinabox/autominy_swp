@@ -55,8 +55,8 @@ namespace emergency_stop {
          */
         void onScan(sensor_msgs::LaserScanConstPtr const &msg) {
             emergencyStop->checkEmergencyStop(msg);
-            distanceToObstaclePublisher.publish(emergencyStop->getDistanceToObstacle());
             speedPublisher.publish(emergencyStop->getSpeedToPublish());
+            distanceToObstaclePublisher.publish(emergencyStop->getDistanceToObstacle());
             safeSpeedPublisher.publish(emergencyStop->getSafeSpeed());
         }
 

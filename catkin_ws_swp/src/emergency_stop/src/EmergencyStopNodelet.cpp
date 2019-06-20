@@ -41,6 +41,7 @@ namespace emergency_stop {
             scanSubscriber = pnh.subscribe("scan", 1, &EmergencyStopNodelet::onScan, this, ros::TransportHints().tcpNoDelay());
             wantedSpeedSubscriber = pnh.subscribe("wanted_speed", 1, &EmergencyStopNodelet::onWantedSpeed, this, ros::TransportHints().tcpNoDelay());
             currentSpeedSubscriber = pnh.subscribe("carstate/speed", 1, &EmergencyStopNodelet::onCurrentSpeed, this, ros::TransportHints().tcpNoDelay());
+            steeringAngleSubscriber = pnh.subscribe("carstate/steering", 1, &EmergencyStopNodelet::onCurrentSteeringAngle, this, ros::TransportHints().tcpNoDelay());
 
             config_server_ = boost::make_shared<dynamic_reconfigure::Server<emergency_stop::EmergencyStopConfig> >(pnh);
             dynamic_reconfigure::Server<emergency_stop::EmergencyStopConfig>::CallbackType f;
@@ -68,6 +69,10 @@ namespace emergency_stop {
             emergencyStop->setWantedSpeed(msg);
         }
 
+        void onCurrentSteeringAngle(autominy_msgs::SteeringAngleConstPtr const &msg) {
+            emergencyStop->setCurrentSteering(msg)
+        }
+
         /** Callback for dynamic_reconfigure.
          **
          ** @param msg
@@ -80,6 +85,7 @@ namespace emergency_stop {
         ros::Subscriber scanSubscriber;
         ros::Subscriber currentSpeedSubscriber;
         ros::Subscriber wantedSpeedSubscriber;
+        ros::Subscriber steeringAngle;
 
         /// publisher
         ros::Publisher speedPublisher;

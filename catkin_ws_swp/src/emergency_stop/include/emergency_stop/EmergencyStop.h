@@ -36,6 +36,8 @@ namespace emergency_stop {
 
         void setWantedSpeed(const autominy_msgs::SpeedCommandConstPtr &speed);
 
+        void setCurrentSteering(const autominy_msgs::SteeringAngleConstPtr &steering)
+
         autominy_msgs::SpeedCommand getSafeSpeed();
 
         autominy_msgs::SpeedCommand getSpeedToPublish();
@@ -45,6 +47,7 @@ namespace emergency_stop {
     private:
         /// dynamic config attribute
         emergency_stop::EmergencyStopConfig config;
+        double currentSteeringAngle = 0.0;
         double obstacleDistance;
         double currentSpeed = 0.0;
         double safeSpeedSI = 0.0;

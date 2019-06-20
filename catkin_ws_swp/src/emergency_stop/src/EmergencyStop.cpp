@@ -102,7 +102,7 @@ namespace emergency_stop {
         currentSpeed = speed->value;
     }
 
-    void EmergencyStop:: setCurrentSteering(const autominy_msgs::SteeringAngleConstPtr &steering) {
+    void EmergencyStop:: setCurrentSteeringAngle(const autominy_msgs::SteeringAngleConstPtr &steering) {
         currentSteeringAngle = steering->value;
     }
 

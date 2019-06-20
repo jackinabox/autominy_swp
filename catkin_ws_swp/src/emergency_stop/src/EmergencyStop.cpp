@@ -124,8 +124,9 @@ namespace emergency_stop {
             msg.value = safeSpeedPWM;
         } else {
             msg.value = wantedSpeed *
-                    boost::algorithm::clamp(obstacleDistance / (config.startup_damp_range + std::sqrt(wantedSpeed/1000)), 0, 1); // dampen start up
-                    //std::pow(boost::algorithm::clamp(obstacleDistance / ((boost::algorithm::clamp(wantedSpeed, 200, 1000)/200) - 0.5), 0, 1), 2); // dampen start up
+                    boost::algorithm::clamp(obstacleDistance / (config.max_startup_damp_range * abs(wantedSpeed)/1000), 0, 1); // dampen start up
+                    //boost::algorithm::clamp(obstacleDistance / (config.startup_damp_range + std::sqrt(wantedSpeed/1000)), 0, 1); // startup_damp_range = 1.0
+                    //std::pow(boost::algorithm::clamp(obstacleDistance / ((boost::algorithm::clamp(wantedSpeed, 200, 1000)/200) - 0.5), 0, 1), 2); // startup_damp_range = 1.0
         }
         return msg;
     }

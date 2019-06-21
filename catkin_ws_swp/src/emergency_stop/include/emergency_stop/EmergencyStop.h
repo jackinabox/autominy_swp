@@ -4,6 +4,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <autominy_msgs/Speed.h>
 #include <autominy_msgs/SpeedCommand.h>
+#include <autominy_msgs/SteeringAngle.h>
 #include <std_msgs/Float32.h>
 #include <limits>
 #include <boost/algorithm/clamp.hpp>
@@ -36,6 +37,8 @@ namespace emergency_stop {
 
         void setWantedSpeed(const autominy_msgs::SpeedCommandConstPtr &speed);
 
+        void setCurrentSteeringAngle(const autominy_msgs::SteeringAngleConstPtr &steering);
+
         autominy_msgs::SpeedCommand getSafeSpeed();
 
         autominy_msgs::SpeedCommand getSpeedToPublish();
@@ -45,6 +48,7 @@ namespace emergency_stop {
     private:
         /// dynamic config attribute
         emergency_stop::EmergencyStopConfig config;
+        double currentSteeringAngle = 0.0;
         double obstacleDistance;
         double currentSpeed = 0.0;
         double safeSpeedSI = 0.0;

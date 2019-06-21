@@ -102,13 +102,17 @@ namespace emergency_stop {
         currentSpeed = speed->value;
     }
 
+    void EmergencyStop:: setCurrentSteeringAngle(const autominy_msgs::SteeringAngleConstPtr &steering) {
+        currentSteeringAngle = steering->value;
+    }
+
     void EmergencyStop::setWantedSpeed(const autominy_msgs::SpeedCommandConstPtr &speed) {
         wantedSpeed = speed->value;
     }
 
     std_msgs::Float32 EmergencyStop::getDistanceToObstacle() {
         std_msgs::Float32 msg;
-        msg.data = static_cast<float>(obstacleDistance); // msg.value =
+        msg.data = static_cast<float>(obstacleDistance);
         return msg;
     }
 

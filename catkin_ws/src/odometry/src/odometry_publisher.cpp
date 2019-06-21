@@ -35,14 +35,19 @@ void twistCallback(const autominy_msgs::Speed &msg) {
 }
 
 void headingCallback(const sensor_msgs::Imu &msg) {
+    auto yaw = tf::getYaw(msg.orientation);
+    if (std::isnan(yaw)) {
+        return;
+    }
+
+    head = yaw;
+
     if (!init) {
         init = true;
-        head = tf::getYaw(msg.orientation); //rad
         initial_head = head;
         vth = 0.0;
         th = initial_yaw;
     } else {
-        head = tf::getYaw(msg.orientation); //rad
         double delta_head = head - initial_head + initial_yaw;
         if (delta_head > 3.14)
             delta_head = delta_head - 6.28;
@@ -64,7 +69,7 @@ int main(int argc, char **argv) {
     std::string model_car_twist, model_car_yaw, steering_command, steering_feedback;
     n.param<std::string>("model_car_twist", model_car_twist, "speed");
     n.param<std::string>("model_car_yaw", model_car_yaw, "imu");
-    n.param<std::string>("steering_feedback", steering_feedback, "carstate/steering");
+    n.param<std::string>("steering_feedback", steering_feedback, "steering");
 
     n.param("initial_x", initial_x, 2.5);
     n.param("initial_y", initial_y, 0.5);

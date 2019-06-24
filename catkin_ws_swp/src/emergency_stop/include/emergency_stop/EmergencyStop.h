@@ -7,6 +7,7 @@
 #include <autominy_msgs/SteeringAngle.h>
 #include <std_msgs/Float32.h>
 #include <limits>
+#include <math.h>
 #include <boost/algorithm/clamp.hpp>
 
 namespace emergency_stop {
@@ -15,6 +16,18 @@ namespace emergency_stop {
  **
  ** @ingroup @@
  */
+
+    enum class Direction : int8_t {
+        FORWARD = 1,
+        BACKWARD = -1
+    };
+
+    enum class Orientation : int8_t {
+        STRAIGHT = 0;
+        LEFT = 1,
+        RIGHT = -1
+    };
+
     class EmergencyStop {
     public:
         /** Constructor.
@@ -58,8 +71,18 @@ namespace emergency_stop {
 
         double getDistanceToCar(double distanceToLidar, int deg_step);
 
+        double getTurningRadius(double steeringAngle);
+
+        double getX(double radius, double alpha, double d);
+
+        bool evaluateMeasurePoint(double radius, double x);
+
         double calculateSafeSpeed(double distance, double deacceleration, double targetQuotient);
 
         double safeDistanceQuotient(double distance, double deacceleration, double currentSpeed);
+
+        Direction direction = Direction::FORWARD;
+
+        Orientation orientation = Orientation ::STRAIGHT;
     };
 }

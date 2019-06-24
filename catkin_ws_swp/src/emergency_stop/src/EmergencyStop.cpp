@@ -5,12 +5,32 @@ namespace emergency_stop {
 
     EmergencyStop::~EmergencyStop() = default;
 
+    const double L = config.wheelbase;
+    const double T = config.track;
+    const double LENGTH = config.car_length;
+    const double WIDTH = config.car_width;
+
     void EmergencyStop::setConfig(emergency_stop::EmergencyStopConfig &config) { this->config = config; }
 
     void EmergencyStop::checkEmergencyStop(const sensor_msgs::LaserScanConstPtr &scan) {
 
         if (emergencyStop == false) {
             safeSpeedPWM = wantedSpeed;
+        }
+
+        if (wantedSpeed < 0.0) {
+            direction = Direction::BACKWARD;
+        } else if (wantedSpeed > 0.0) {
+            direction = Direction::FORWARD;
+        }
+        // * static_cast<double>(direction);
+
+        if (currentSteeringAngle < 0.0) {
+            orientation = Orientation::RIGHT;
+        } else if (currentSteeringAngle > 0.0) {
+            orientation = Orientation::LEFT;
+        } else {
+            orientation = Orientation::STRAIGHT;
         }
 
         double stopDistance = config.stop_distance;
@@ -87,22 +107,40 @@ namespace emergency_stop {
         }
     }
 
-    double EmergencyStop::calculateSafeSpeed(double distance, double deacceleration, double targetQuotient) {
-        return std::sqrt((distance) * deacceleration / targetQuotient);
+    double EmergencyStop::getTurningRadius(double steeringAngle) {
+        return L / tan(steeringAngle)
     }
 
-    double EmergencyStop::safeDistanceQuotient(double distance, double deacceleration, double currentSpeed) {
+    double EmergencyStop::getX(double radius, double alpha, double d) {
+        auto t = cos(alpha) * d;
+        auto h = sin(alpha) * d;
+        auto s = radius - t;
+        auto tan_beta = h / s;
+        auto beta = atan(tan_beta);
+        auto x = s / cos(beta);
+        return x;
+    }
+
+    bool EmergencyStop::evaluateMeasurePoint(double radius, double x) {
+        return (x < (radius + WIDTH/2) && x > (radius - WIDTH/2))
+    }
+
+    double EmergencyStop::calculateSafeSpeed(double distance, double deceleration, double targetQuotient) {
+        return std::sqrt((distance) * deceleration / targetQuotient);
+    }
+
+    double EmergencyStop::safeDistanceQuotient(double distance, double deceleration, double currentSpeed) {
         if (currentSpeed == 0.0) {
             return std::numeric_limits<double>::infinity();
         }
-        return distance * deacceleration / std::pow(currentSpeed, 2);
+        return distance * deceleration / std::pow(currentSpeed, 2);
     }
 
     void EmergencyStop::setCurrentSpeed(const autominy_msgs::SpeedConstPtr &speed) {
         currentSpeed = speed->value;
     }
 
-    void EmergencyStop:: setCurrentSteeringAngle(const autominy_msgs::SteeringAngleConstPtr &steering) {
+    void EmergencyStop::setCurrentSteeringAngle(const autominy_msgs::SteeringAngleConstPtr &steering) {
         currentSteeringAngle = steering->value;
     }
 
@@ -128,9 +166,11 @@ namespace emergency_stop {
             msg.value = safeSpeedPWM;
         } else {
             msg.value = wantedSpeed *
-                    boost::algorithm::clamp(obstacleDistance / (config.max_startup_damp_range * abs(wantedSpeed)/1000), 0, 1); // dampen start up
-                    //boost::algorithm::clamp(obstacleDistance / (config.startup_damp_range + std::sqrt(wantedSpeed/1000)), 0, 1); // startup_damp_range = 1.0
-                    //std::pow(boost::algorithm::clamp(obstacleDistance / ((boost::algorithm::clamp(wantedSpeed, 200, 1000)/200) - 0.5), 0, 1), 2); // startup_damp_range = 1.0
+                        boost::algorithm::clamp(
+                                obstacleDistance / (config.max_startup_damp_range * abs(wantedSpeed) / 1000), 0,
+                                1); // dampen start up
+            //boost::algorithm::clamp(obstacleDistance / (config.startup_damp_range + std::sqrt(wantedSpeed/1000)), 0, 1); // startup_damp_range = 1.0
+            //std::pow(boost::algorithm::clamp(obstacleDistance / ((boost::algorithm::clamp(wantedSpeed, 200, 1000)/200) - 0.5), 0, 1), 2); // startup_damp_range = 1.0
         }
         return msg;
     }

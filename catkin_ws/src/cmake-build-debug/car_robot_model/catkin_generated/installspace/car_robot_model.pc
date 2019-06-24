@@ -1,0 +1,8 @@
+prefix=/home/adrian/autominy_swp/catkin_ws/src/install
+
+Name: car_robot_model
+Description: Description of car_robot_model
+Version: 0.0.1
+Cflags: 
+Libs: -L/home/adrian/autominy_swp/catkin_ws/src/install/lib 
+Requires: 

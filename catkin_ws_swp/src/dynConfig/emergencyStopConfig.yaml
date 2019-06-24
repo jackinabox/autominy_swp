@@ -1,0 +1,31 @@
+!!python/object/new:dynamic_reconfigure.encoding.Config
+dictitems:
+  angle_back: 0.71
+  angle_front: 0.79
+  break_distance: 0.7
+  forward_minimum_distance: 0.07
+  groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+    dictitems:
+      angle_back: 0.71
+      angle_front: 0.79
+      break_distance: 0.7
+      forward_minimum_distance: 0.07
+      groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      id: 0
+      maximum_lookahead_distance: 3.0
+      name: Default
+      negative_acceleration: 0.5
+      parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      parent: 0
+      reverse_minimum_distance: 0.28
+      state: true
+      target_quotient: 1.1
+      type: ''
+    state: []
+  maximum_lookahead_distance: 3.0
+  negative_acceleration: 0.5
+  reverse_minimum_distance: 0.28
+  target_quotient: 1.1
+state: []

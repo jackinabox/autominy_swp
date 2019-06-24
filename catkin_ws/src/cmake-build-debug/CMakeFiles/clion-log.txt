@@ -1,0 +1,88 @@
+/opt/ros/melodic/etc/scripts/cmake-wrapper.sh -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/adrian/autominy_swp/catkin_ws/src
+-- The C compiler identification is GNU 7.4.0
+-- The CXX compiler identification is GNU 7.4.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Using CATKIN_DEVEL_PREFIX: /home/adrian/autominy_swp/catkin_ws/src/devel
+-- Using CMAKE_PREFIX_PATH: /home/adrian/autominy_swp/catkin_ws_swp/devel;/opt/ros/melodic
+-- This workspace overlays: /home/adrian/autominy_swp/catkin_ws_swp/devel;/opt/ros/melodic
+-- Found PythonInterp: /usr/bin/python2 (found suitable version "2.7.15", minimum required is "2") 
+-- Using PYTHON_EXECUTABLE: /usr/bin/python2
+-- Using Debian Python package layout
+-- Using empy: /usr/bin/empy
+-- Using CATKIN_ENABLE_TESTING: ON
+-- Call enable_testing()
+-- Using CATKIN_TEST_RESULTS_DIR: /home/adrian/autominy_swp/catkin_ws/src/cmake-build-debug/test_results
+-- Found gmock sources under '/usr/src/googletest': gmock will be built
+-- Found PythonInterp: /usr/bin/python2 (found version "2.7.15") 
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Looking for pthread_create
+-- Looking for pthread_create - not found
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - found
+-- Found Threads: TRUE  
+-- Found gtest sources under '/usr/src/googletest': gtests will be built
+-- Using Python nosetests: /usr/bin/nosetests-2.7
+-- catkin 0.7.17
+-- BUILD_SHARED_LIBS is on
+-- BUILD_SHARED_LIBS is on
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- ~~  traversing 20 packages in topological order:
+-- ~~  - car_robot_model
+-- ~~  - map_publisher
+-- ~~  - serial
+-- ~~  - autominy_msgs
+-- ~~  - arduino_communication
+-- ~~  - control
+-- ~~  - fub_navigation
+-- ~~  - fub_steering_calibration
+-- ~~  - hd_map
+-- ~~  - emergency_stop
+-- ~~  - hardware_calibration
+-- ~~  - remote_control
+-- ~~  - rplidar_ros
+-- ~~  - odometry
+-- ~~  - lidar_pose_estimation
+-- ~~  - obstacle_detection
+-- ~~  - stereo_camera_pose_estimation
+-- ~~  - road_marking_localization
+-- ~~  - tick_calibration
+-- ~~  - autominy
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- +++ processing catkin package: 'car_robot_model'
+-- ==> add_subdirectory(car_robot_model)
+-- +++ processing catkin package: 'map_publisher'
+-- ==> add_subdirectory(map_publisher)
+-- Could NOT find map_server (missing: map_server_DIR)
+-- Could not find the required component 'map_server'. The following CMake error indicates that you either need to install the package with the same name or change your environment so that it can be found.
+CMake Error at /opt/ros/melodic/share/catkin/cmake/catkinConfig.cmake:83 (find_package):
+  Could not find a package configuration file provided by "map_server" with
+  any of the following names:
+
+    map_serverConfig.cmake
+    map_server-config.cmake
+
+  Add the installation prefix of "map_server" to CMAKE_PREFIX_PATH or set
+  "map_server_DIR" to a directory containing one of the above files.  If
+  "map_server" provides a separate development package or SDK, be sure it has
+  been installed.
+Call Stack (most recent call first):
+  map_publisher/CMakeLists.txt:10 (find_package)
+
+
+-- Configuring incomplete, errors occurred!
+See also "/home/adrian/autominy_swp/catkin_ws/src/cmake-build-debug/CMakeFiles/CMakeOutput.log".
+See also "/home/adrian/autominy_swp/catkin_ws/src/cmake-build-debug/CMakeFiles/CMakeError.log".

@@ -1,0 +1,37 @@
+!!python/object/new:dynamic_reconfigure.encoding.Config
+dictitems:
+  groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+    dictitems:
+      groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      id: 0
+      maximum_speed_pwm: 1000
+      maximum_steering_feedback: 420
+      maximum_steering_pwm: 2000
+      maximum_steering_radians: -0.498
+      minimum_speed_pwm: -1000
+      minimum_steering_feedback: 192
+      minimum_steering_pwm: 980
+      minimum_steering_radians: 0.512
+      name: Default
+      number_of_steering_msgs_filter: 10
+      number_of_ticks_filter: 20
+      parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      parent: 0
+      state: true
+      ticks_to_m: 0.0027
+      type: ''
+    state: []
+  maximum_speed_pwm: 1000
+  maximum_steering_feedback: 420
+  maximum_steering_pwm: 2000
+  maximum_steering_radians: -0.498
+  minimum_speed_pwm: -1000
+  minimum_steering_feedback: 192
+  minimum_steering_pwm: 980
+  minimum_steering_radians: 0.512
+  number_of_steering_msgs_filter: 10
+  number_of_ticks_filter: 20
+  ticks_to_m: 0.0027
+state: []

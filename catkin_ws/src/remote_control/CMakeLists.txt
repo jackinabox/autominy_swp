@@ -34,6 +34,8 @@ include_directories(
 set(Sources 
   nodes/remote_control.cpp
   src/controller.cpp
+ # src/httpcommunicator.cpp
+  src/monitor.cpp
   src/xboxcommunicator.cpp
 )
 

@@ -23,7 +23,7 @@ namespace emergency_stop {
     };
 
     enum class Orientation : int8_t {
-        STRAIGHT = 0;
+        STRAIGHT = 0,
         LEFT = 1,
         RIGHT = -1
     };

@@ -5,10 +5,10 @@ namespace emergency_stop {
 
     EmergencyStop::~EmergencyStop() = default;
 
-    const double L = config.wheelbase;
-    const double T = config.track;
-    const double LENGTH = config.car_length;
-    const double WIDTH = config.car_width;
+    //const double L = config.wheelbase;
+    //const double T = config.track;
+    //const double LENGTH = config.car_length;
+    //const double WIDTH = config.car_width;
 
     void EmergencyStop::setConfig(emergency_stop::EmergencyStopConfig &config) { this->config = config; }
 
@@ -108,7 +108,7 @@ namespace emergency_stop {
     }
 
     double EmergencyStop::getTurningRadius(double steeringAngle) {
-        return L / tan(steeringAngle)
+        return config.wheelbase / tan(steeringAngle);
     }
 
     double EmergencyStop::getX(double radius, double alpha, double d) {
@@ -122,7 +122,7 @@ namespace emergency_stop {
     }
 
     bool EmergencyStop::evaluateMeasurePoint(double radius, double x) {
-        return (x < (radius + WIDTH/2) && x > (radius - WIDTH/2))
+        return (x < (radius + config.car_width/2) && x > (radius - config.car_width/2));
     }
 
     double EmergencyStop::calculateSafeSpeed(double distance, double deceleration, double targetQuotient) {

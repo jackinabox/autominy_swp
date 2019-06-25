@@ -25,9 +25,9 @@ namespace emergency_stop {
         }
         // * static_cast<double>(direction);
 
-        if (currentSteeringAngle < 0.0) {
+        if (currentSteeringAngle < -config.steering_angle_tolerance) {
             orientation = Orientation::RIGHT;
-        } else if (currentSteeringAngle > 0.0) {
+        } else if (currentSteeringAngle > config.steering_angle_tolerance) {
             orientation = Orientation::LEFT;
         } else {
             orientation = Orientation::STRAIGHT;
@@ -42,39 +42,129 @@ namespace emergency_stop {
         auto minDistance = std::numeric_limits<double>::infinity(); // init minDist
         auto angleIncrement = scan->angle_increment;
 
-        if (wantedSpeed >= 0) {    //forward
-            auto frontAngle = config.angle_front / 2.0;
+        auto frontAngle = config.half_angle_front_init;
+        auto backAngle = config.half_angle_back_init;
 
-            // front right
-            auto start = 0;
-            auto end = static_cast<int>(frontAngle / angleIncrement);
-            for (int i = start; i < scan->ranges.size() && i < end; i++) {
-                auto dist = getDistanceToCar(scan->ranges[i], i);
-                if (dist < maxLookahead && dist > 0 && dist < minDistance) {
-                    minDistance = dist;
+        //if (wantedSpeed >= 0) {    //forward
+        if(direction == Direction::FORWARD) {
+            // DEPENDING ON STEERING DIRECTION
+
+            // DRIVING STRAIGHT
+            if(orientation == Orientation::STRAIGHT) {
+                steers = "straight";
+                // front right lidar values
+                auto start = 0;
+                auto end = static_cast<int>(frontAngle / angleIncrement);
+                for (int i = start; i < scan->ranges.size() && i < end; i++) {
+                    auto dist = getDistanceToCar(scan->ranges[i], i);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
+                }
+                // front left lidar values
+                start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
+                end = scan->ranges.size();
+                for (int k = start; k < end; k++) {
+                    auto dist = getDistanceToCar(scan->ranges[k], k);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
                 }
             }
 
-            // front left
-            start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
-            end = scan->ranges.size();
-            for (int k = start; k < end; k++) {
-                auto dist = getDistanceToCar(scan->ranges[k], k);
-                if (dist < maxLookahead && dist > 0 && dist < minDistance) {
-                    minDistance = dist;
+            // DRIVING LEFT
+            if(orientation == Orientation::LEFT) {
+                steers = "left";
+                // front right lidar values
+                auto start = 0;
+                auto end = static_cast<int>(frontAngle / angleIncrement);
+                for (int i = start; i < scan->ranges.size() && i < end; i++) {
+                    auto dist = getDistanceToCar(scan->ranges[i], i);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
+                }
+                // front left lidar values
+                //start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
+                start = 270;
+                end = scan->ranges.size();
+                for (int k = start; k < end; k++) {
+                    auto dist = getDistanceToCar(scan->ranges[k], k);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
                 }
             }
+
+            // DRIVING RIGHT
+            if(orientation == Orientation::RIGHT) {
+                steers = "right";
+                // front right lidar values
+                auto start = 0;
+                auto end = 90;
+                for (int i = start; i < scan->ranges.size() && i < end; i++) {
+                    auto dist = getDistanceToCar(scan->ranges[i], i);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
+                }
+                // front left lidar values
+                start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
+                end = scan->ranges.size();
+                for (int k = start; k < end; k++) {
+                    auto dist = getDistanceToCar(scan->ranges[k], k);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
+                }
+            }
+
 
         } else { //(wantedSpeed < 0) backward
-            auto backAngle = config.angle_back / 2.0;
-            int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
-            int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
-            // back right to back left
-            for (int j = start; j < end && j < scan->ranges.size(); j++) {
-                // we might see the camera in the laser scan
-                auto dist = getDistanceToCar(scan->ranges[j], j);
-                if (dist < maxLookahead && dist > 0 && dist < minDistance) {
-                    minDistance = dist;
+            // DEPENDING ON STEERING DIRECTION
+
+            // DRIVING STRAIGHT
+            if(orientation == Orientation::STRAIGHT) {
+                steers = "straight";
+                int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
+                int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
+                // back right to back left
+                for (int j = start; j < end && j < scan->ranges.size(); j++) {
+                    // we might see the camera in the laser scan
+                    auto dist = getDistanceToCar(scan->ranges[j], j);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
+                }
+            }
+
+            // DRIVING LEFT
+            if(orientation == Orientation::LEFT) {
+                steers = "left";
+                int start = static_cast<int>(frontAngle / angleIncrement);
+                int end = 270;
+                // back right to back left
+                for (int j = start; j < end && j < scan->ranges.size(); j++) {
+                    // we might see the camera in the laser scan
+                    auto dist = getDistanceToCar(scan->ranges[j], j);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
+                }
+            }
+
+            // DRIVING RIGHT
+            if(orientation == Orientation::RIGHT) {
+                steers = "right";
+                int start = 90;
+                int end = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
+                // back right to back left
+                for (int j = start; j < end && j < scan->ranges.size(); j++) {
+                    // we might see the camera in the laser scan
+                    auto dist = getDistanceToCar(scan->ranges[j], j);
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                        minDistance = dist;
+                    }
                 }
             }
         }
@@ -146,6 +236,18 @@ namespace emergency_stop {
 
     void EmergencyStop::setWantedSpeed(const autominy_msgs::SpeedCommandConstPtr &speed) {
         wantedSpeed = speed->value;
+    }
+
+    std_msgs::String EmergencyStop::getSteering() {
+        std_msgs::String msg;
+        msg.data = steers;
+        return msg;
+    }
+
+    std_msgs::Float32 EmergencyStop::getSteeringAngleSub() {
+        std_msgs::Float32 msg;
+        msg.data = static_cast<float>(currentSteeringAngle);
+        return msg;
     }
 
     std_msgs::Float32 EmergencyStop::getDistanceToObstacle() {

@@ -40,6 +40,8 @@ namespace emergency_stop {
             distanceToObstaclePublisher = pnh.advertise<std_msgs::Float32>("obstacle_distance", 1);
             speedPublisher = pnh.advertise<autominy_msgs::SpeedCommand>("speed", 1);
             safeSpeedPublisher = pnh.advertise<autominy_msgs::SpeedCommand>("safeSpeed", 1);
+            steerPublisher = pnh.advertise<std_msgs::String>("car_steers", 1);
+            steerAngleSubPublisher = pnh.advertise<std_msgs::Float32>("car_steers_angle", 1);
             scanSubscriber = pnh.subscribe("scan", 1, &EmergencyStopNodelet::onScan, this, ros::TransportHints().tcpNoDelay());
             wantedSpeedSubscriber = pnh.subscribe("wanted_speed", 1, &EmergencyStopNodelet::onWantedSpeed, this, ros::TransportHints().tcpNoDelay());
             currentSpeedSubscriber = pnh.subscribe("carstate/speed", 1, &EmergencyStopNodelet::onCurrentSpeed, this, ros::TransportHints().tcpNoDelay());
@@ -61,6 +63,8 @@ namespace emergency_stop {
             speedPublisher.publish(emergencyStop->getSpeedToPublish());
             distanceToObstaclePublisher.publish(emergencyStop->getDistanceToObstacle());
             safeSpeedPublisher.publish(emergencyStop->getSafeSpeed());
+            steerPublisher.publish(emergencyStop->getSteering());
+            steerAngleSubPublisher.publish(emergencyStop->getSteeringAngleSub());
         }
 
         void onCurrentSpeed(autominy_msgs::SpeedConstPtr const &msg) {
@@ -93,6 +97,8 @@ namespace emergency_stop {
         ros::Publisher speedPublisher;
         ros::Publisher safeSpeedPublisher;
         ros::Publisher distanceToObstaclePublisher;
+        ros::Publisher steerPublisher;
+        ros::Publisher steerAngleSubPublisher;
 
         /// pointer to dynamic reconfigure service
         boost::shared_ptr<dynamic_reconfigure::Server<emergency_stop::EmergencyStopConfig> > config_server_;

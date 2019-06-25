@@ -6,8 +6,10 @@
 #include <autominy_msgs/SpeedCommand.h>
 #include <autominy_msgs/SteeringAngle.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/String.h>
 #include <limits>
 #include <math.h>
+#include <string>
 #include <boost/algorithm/clamp.hpp>
 
 namespace emergency_stop {
@@ -52,16 +54,20 @@ namespace emergency_stop {
 
         void setCurrentSteeringAngle(const autominy_msgs::SteeringAngleConstPtr &steering);
 
+        std_msgs::String getSteering();
+
         autominy_msgs::SpeedCommand getSafeSpeed();
 
         autominy_msgs::SpeedCommand getSpeedToPublish();
 
         std_msgs::Float32 getDistanceToObstacle();
 
+        std_msgs::Float32 getSteeringAngleSub();
+
     private:
         /// dynamic config attribute
         emergency_stop::EmergencyStopConfig config;
-        double currentSteeringAngle = 0.0;
+        double currentSteeringAngle;
         double obstacleDistance;
         double currentSpeed = 0.0;
         double safeSpeedSI = 0.0;
@@ -80,6 +86,8 @@ namespace emergency_stop {
         double calculateSafeSpeed(double distance, double deacceleration, double targetQuotient);
 
         double safeDistanceQuotient(double distance, double deacceleration, double currentSpeed);
+
+        std::string steers = "straight";
 
         Direction direction = Direction::FORWARD;
 

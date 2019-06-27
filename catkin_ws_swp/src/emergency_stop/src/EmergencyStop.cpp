@@ -25,6 +25,8 @@ namespace emergency_stop {
         }
         // * static_cast<double>(direction);
 
+        currentSteeringAngle = config.currentSteeringAngle;
+
         if (currentSteeringAngle < -config.steering_angle_tolerance) {
             orientation = Orientation::RIGHT;
         } else if (currentSteeringAngle > config.steering_angle_tolerance) {
@@ -52,21 +54,22 @@ namespace emergency_stop {
             // DRIVING STRAIGHT
             if(orientation == Orientation::STRAIGHT) {
                 steers = "straight";
-                // front right lidar values
+
+                // front left lidar values
                 auto start = 0;
                 auto end = static_cast<int>(frontAngle / angleIncrement);
                 for (int i = start; i < scan->ranges.size() && i < end; i++) {
                     auto dist = getDistanceToCar(scan->ranges[i], i);
-                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance && isOnStraightPath(i*angleIncrement, scan->ranges[i], false)) {
                         minDistance = dist;
                     }
                 }
-                // front left lidar values
+                // front right lidar values
                 start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
                 end = scan->ranges.size();
                 for (int k = start; k < end; k++) {
                     auto dist = getDistanceToCar(scan->ranges[k], k);
-                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance && isOnStraightPath((360-k)*angleIncrement, scan->ranges[k], false)) {
                         minDistance = dist;
                     }
                 }
@@ -75,18 +78,18 @@ namespace emergency_stop {
             // DRIVING LEFT
             if(orientation == Orientation::LEFT) {
                 steers = "left";
-                // front right lidar values
+
+                // front left lidar values
                 auto start = 0;
-                auto end = static_cast<int>(frontAngle / angleIncrement);
+                auto end = 90;
                 for (int i = start; i < scan->ranges.size() && i < end; i++) {
                     auto dist = getDistanceToCar(scan->ranges[i], i);
                     if (dist < maxLookahead && dist > 0 && dist < minDistance) {
                         minDistance = dist;
                     }
                 }
-                // front left lidar values
-                //start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
-                start = 270;
+                // front right lidar values
+                start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
                 end = scan->ranges.size();
                 for (int k = start; k < end; k++) {
                     auto dist = getDistanceToCar(scan->ranges[k], k);
@@ -99,17 +102,18 @@ namespace emergency_stop {
             // DRIVING RIGHT
             if(orientation == Orientation::RIGHT) {
                 steers = "right";
-                // front right lidar values
+
+                // front left lidar values
                 auto start = 0;
-                auto end = 90;
+                auto end = static_cast<int>(frontAngle / angleIncrement);
                 for (int i = start; i < scan->ranges.size() && i < end; i++) {
                     auto dist = getDistanceToCar(scan->ranges[i], i);
                     if (dist < maxLookahead && dist > 0 && dist < minDistance) {
                         minDistance = dist;
                     }
                 }
-                // front left lidar values
-                start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
+                // front right lidar values
+                start = 270;
                 end = scan->ranges.size();
                 for (int k = start; k < end; k++) {
                     auto dist = getDistanceToCar(scan->ranges[k], k);
@@ -126,23 +130,26 @@ namespace emergency_stop {
             // DRIVING STRAIGHT
             if(orientation == Orientation::STRAIGHT) {
                 steers = "straight";
+
                 int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
                 int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
                 // back right to back left
                 for (int j = start; j < end && j < scan->ranges.size(); j++) {
                     // we might see the camera in the laser scan
                     auto dist = getDistanceToCar(scan->ranges[j], j);
-                    if (dist < maxLookahead && dist > 0 && dist < minDistance) {
+                    if (dist < maxLookahead && dist > 0 && dist < minDistance && isOnStraightPath((abs(j-180))*angleIncrement, scan->ranges[j], true)) {
                         minDistance = dist;
                     }
                 }
             }
 
             // DRIVING LEFT
-            if(orientation == Orientation::LEFT) {
+            if(orientation == Orientation::RIGHT) {
+            //if(orientation == Orientation::LEFT) {
                 steers = "left";
-                int start = static_cast<int>(frontAngle / angleIncrement);
-                int end = 270;
+
+                int start = 90;
+                int end = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
                 // back right to back left
                 for (int j = start; j < end && j < scan->ranges.size(); j++) {
                     // we might see the camera in the laser scan
@@ -154,10 +161,12 @@ namespace emergency_stop {
             }
 
             // DRIVING RIGHT
-            if(orientation == Orientation::RIGHT) {
+            //if(orientation == Orientation::RIGHT) {
+            if(orientation == Orientation::LEFT) {
                 steers = "right";
-                int start = 90;
-                int end = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
+
+                int start = static_cast<int>(frontAngle / angleIncrement);
+                int end = 270;
                 // back right to back left
                 for (int j = start; j < end && j < scan->ranges.size(); j++) {
                     // we might see the camera in the laser scan
@@ -184,6 +193,10 @@ namespace emergency_stop {
             return;
         }
     }
+
+    /*
+     *  Calculations
+     */
 
     double EmergencyStop::getDistanceToCar(double distanceToLidar, int deg_step) {
         /*
@@ -226,6 +239,28 @@ namespace emergency_stop {
         return distance * deceleration / std::pow(currentSpeed, 2);
     }
 
+
+    // works on actual lidar position & values
+    bool EmergencyStop::isOnStraightPath(double posAngle, double distance, bool backward) {
+        auto distanceFromMiddle = sin(posAngle) * distance;
+        auto safetyWidth = 0.02;
+        if(backward){
+            safetyWidth = 0.04;
+        }
+        return distanceFromMiddle < ((config.car_width + safetyWidth) / 2);
+    }
+
+    /*
+    bool EmergencyStop::projectOnRearAxle(double angle, double distance) {
+
+    }
+    */
+
+
+    /*
+     *  Setters for Subscribers
+     */
+
     void EmergencyStop::setCurrentSpeed(const autominy_msgs::SpeedConstPtr &speed) {
         currentSpeed = speed->value;
     }
@@ -238,6 +273,9 @@ namespace emergency_stop {
         wantedSpeed = speed->value;
     }
 
+    /*
+     *  Getters for Publishers
+     */
     std_msgs::String EmergencyStop::getSteering() {
         std_msgs::String msg;
         msg.data = steers;
@@ -269,8 +307,7 @@ namespace emergency_stop {
         } else {
             msg.value = wantedSpeed *
                         boost::algorithm::clamp(
-                                obstacleDistance / (config.max_startup_damp_range * abs(wantedSpeed) / 1000), 0,
-                                1); // dampen start up
+                                obstacleDistance / (config.max_startup_damp_range * abs(wantedSpeed) / 1000), 0, 1); // dampen start up
             //boost::algorithm::clamp(obstacleDistance / (config.startup_damp_range + std::sqrt(wantedSpeed/1000)), 0, 1); // startup_damp_range = 1.0
             //std::pow(boost::algorithm::clamp(obstacleDistance / ((boost::algorithm::clamp(wantedSpeed, 200, 1000)/200) - 0.5), 0, 1), 2); // startup_damp_range = 1.0
         }

@@ -87,6 +87,8 @@ namespace emergency_stop {
 
         double safeDistanceQuotient(double distance, double deacceleration, double currentSpeed);
 
+        bool isOnStraightPath(double posAngle, double distance, bool backward);
+
         std::string steers = "straight";
 
         Direction direction = Direction::FORWARD;

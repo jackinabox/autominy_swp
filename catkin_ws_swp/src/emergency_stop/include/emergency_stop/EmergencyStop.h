@@ -78,10 +78,12 @@ namespace emergency_stop {
         int16_t wantedSpeed = 0;
         bool emergencyStop = true;
 
-        const DEG90INRAD = 1.5707963267948966;
-        const DEG180INRAD = 3.1415926535897931;
-        const DEG270INRAD = 4.7123889803846897;
-        const DEG360INRAD = 6.2831853071795862;
+        const DEG90INRAD =  M_PI * 0.5; // 1.5707963267948966;
+        const DEG180INRAD = M_PI;       // 3.1415926535897931;
+        const DEG270INRAD = M_PI * 1.5; // 4.7123889803846897;
+        const DEG360INRAD = M_PI * 2;   // 6.2831853071795862;
+
+        double hypotenuse(double a, double b);
 
         double projectOnRearAxleAngle(double angle, double distance, double offset=config.lidar_rear_axle_distance);
 
@@ -102,6 +104,8 @@ namespace emergency_stop {
         double safeDistanceQuotient(double distance, double deceleration, double currentSpeed);
 
         bool isOnStraightPath(double posAngle, double distance, bool backward);
+
+        bool isOnCar(double dist, double rad);
 
         std::string steers = "straight";
 

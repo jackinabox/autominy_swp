@@ -216,6 +216,10 @@ namespace emergency_stop {
      *  Calculations
      */
 
+    double EmergencyStop::hypotenuse(double a, double b) {
+        return std::sqrt(std::pow(a, 2) + std::pow(b, 2));
+    }
+
     double EmergencyStop::projectOnRearAxleAngle(double angle, double distance, double offset=config.lidar_rear_axle_distance) {
 
         double a;
@@ -322,15 +326,78 @@ namespace emergency_stop {
     }*/
 
     double EmergencyStop::getStraightDistanceToCar(double distanceToLidar, int deg_step) {
-        /*
-         * open for extension
-         * --> give the exact distance for each orientation of the car to the obstacle
-         */
         if (deg_step < 90 || deg_step > 270) {
             return (distanceToLidar - config.forward_minimum_distance);
         } else {
             return (distanceToLidar - config.reverse_minimum_distance);
         }
+    }
+
+/*    double EmergencyStop::getExactDistanceToCar(double distanceToLidar, int deg_step) {
+        if (deg_step < 90 || deg_step > 270) {
+            return (distanceToLidar - config.forward_minimum_distance);
+        } else {
+            return (distanceToLidar - config.reverse_minimum_distance);
+        }
+    }*/
+
+    bool EmergencyStop::isOnCar(double dist, double rad) {
+        double offsetFront = config.forward_minimum_distance;
+        double offsetRear = config.reverse_minimum_distance;
+        double angleFront = config.half_angle_front_init;
+        double angleRear = config.half_angle_back_init;
+        double alpha;
+        double a, b, c;
+
+        // front: approx. same distance -> because of radial bumper
+        if (angleFront >= rad && rad >= (DEG360INRAD - angleFront)) {
+            return dist < offsetFront;
+        }
+        if (angleFront < rad && rad <= DEG90INRAD) {
+            alpha = DEG90INRAD - rad;
+            b = config.car_width / 2;
+            a = b * tan(alpha);
+            c = hypotenuse(a, b);
+            return dist < c;
+        }
+        if (DEG90INRAD < rad && rad < (DEG180INRAD - angleRear)) {
+            alpha = rad - DEG90INRAD;
+            b = config.car_width / 2;
+            a = b * tan(alpha);
+            c = hypotenuse(a, b);
+            return dist < c;
+        }
+        if ((DEG180INRAD - angleRear) <= rad && rad < DEG180INRAD) {
+            alpha = DEG180INRAD - rad;
+            b = offsetRear;
+            a = b * tan(alpha);
+            c = hypotenuse(a, b);
+            return dist < c;
+        }
+        if (DEG180INRAD <= rad && rad <= (DEG180INRAD + offsetRear)) {
+            alpha = rad - DEG180INRAD;
+            b = offsetRear;
+            a = b * tan(alpha);
+            c = hypotenuse(a, b);
+            return dist < c;
+        }
+        if ((DEG180INRAD + offsetRear) < rad && rad <= DEG270INRAD) {
+            alpha = DEG270INRAD - rad;
+            b = config.car_width / 2;
+            a = b * tan(alpha);
+            c = hypotenuse(a, b);
+            return dist < c;
+        }
+        if (DEG270INRAD < rad && rad < (DEG360INRAD - angleFront)) {
+            alpha = rad - DEG270INRAD;
+            b = config.car_width / 2;
+            a = b * tan(alpha);
+            c = hypotenuse(a, b);
+            return dist < c;
+        }
+
+        // on coding error:
+        return true;
     }
 
     double EmergencyStop::getTurningRadius(double steeringAngle) {

@@ -109,6 +109,10 @@ namespace emergency_stop {
 
         double getTurningRadius(double steeringAngle);
 
+        double calcOffsetAngle(double r, Direction direction);
+
+        double calcEffectiveDistance(double angle, double angleOffset, double radius);
+
         double calculateSafeSpeed(double distance, double deceleration, double targetQuotient);
 
         double safeDistanceQuotient(double distance, double deceleration, double currentSpeed);

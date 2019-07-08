@@ -26,17 +26,24 @@ namespace emergency_stop {
         // * static_cast<double>(direction);
 
         //currentSteeringAngle = config.currentSteeringAngle;
-        //double turningRadius;
 
-        if (currentSteeringAngle < -config.steering_angle_tolerance) {
-            orientation = Orientation::RIGHT;
-            currentTurningRadius = getTurningRadius(currentSteeringAngle);
-        } else if (currentSteeringAngle > config.steering_angle_tolerance) {
-            orientation = Orientation::LEFT;
-            currentTurningRadius = getTurningRadius(currentSteeringAngle);
-        } else {
+        if (config.steering_angle_tolerance >= currentSteeringAngle && currentSteeringAngle >= -config.steering_angle_tolerance) {
             orientation = Orientation::STRAIGHT;
         }
+        else{
+            if (currentSteeringAngle < -config.steering_angle_tolerance) {
+                orientation = Orientation::RIGHT;
+            }
+            else{
+                orientation = Orientation::LEFT;
+            }
+            turningRadius = getTurningRadius(currentSteeringAngle);
+            // inner rear tire
+            turningRadiusIR = turningRadius - (config.track / 2);
+            // outer front tire
+            turningRadiusOF = hypotenuse(turningRadiusIR + config.track, config.wheelbase);
+        }
+
 
         double stopDistance = config.stop_distance;
         double targetQuotient = config.target_quotient;
@@ -75,7 +82,7 @@ namespace emergency_stop {
                 }
             }
 
-            if(orientation == Orientation::LEFT) {
+            if (orientation == Orientation::LEFT) {
                 steers = "left";
 
                 auto start = 0;
@@ -83,12 +90,9 @@ namespace emergency_stop {
                 for (int i = start; i < scan->ranges.size() && i < end; i++) {
                     auto alpha = i * angleIncrement;
                     auto distance = scan->ranges[i];
-                    auto projAlpha = alpha; //getProjectedAngle(alpha, distance, config.lidar_rear_axle_distance);
-                    auto projDistance = distance; //getProjectedDistance(alpha, distance, config.lidar_rear_axle_distance);
-                    auto x = getX(currentTurningRadius, projAlpha, projDistance);
-                    if(isOnPath(currentTurningRadius, x)){
-                        auto dist = getStraightDistanceToCar(scan->ranges[i], i);
-                        if (dist < maxRange && dist > 0 && dist < minDistance) {
+                    if (distance < maxRange && !isOnCar(alpha, distance)) {
+                        auto dist = getDistanceFromPoint(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        if (dist < minDistance) { // && dist >= 0
                             minDistance = dist;
                         }
                     }
@@ -97,15 +101,11 @@ namespace emergency_stop {
                 start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
                 end = scan->ranges.size();
                 for (int k = start; k < end; k++) {
-
                     auto alpha = k * angleIncrement;
                     auto distance = scan->ranges[k];
-                    auto projAlpha = alpha; //getProjectedAngle(alpha, distance, config.lidar_rear_axle_distance);
-                    auto projDistance = distance; //getProjectedDistance(alpha, distance, config.lidar_rear_axle_distance);
-                    auto x = getX(currentTurningRadius, projAlpha, projDistance);
-                    if(isOnPath(currentTurningRadius, x)){
-                        auto dist = getStraightDistanceToCar(scan->ranges[k], k);
-                        if (dist < maxRange && dist > 0 && dist < minDistance) {
+                    if (distance < maxRange && !isOnCar(alpha, distance)) {
+                        auto dist = getDistanceFromPoint(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        if (dist < minDistance) { // && dist >= 0
                             minDistance = dist;
                         }
                     }
@@ -118,18 +118,26 @@ namespace emergency_stop {
                 auto start = 0;
                 auto end = static_cast<int>(frontAngle / angleIncrement);
                 for (int i = start; i < scan->ranges.size() && i < end; i++) {
-                    auto dist = getStraightDistanceToCar(scan->ranges[i], i);
-                    if (dist < maxRange && dist > 0 && dist < minDistance) {
-                        minDistance = dist;
+                    auto alpha = i * angleIncrement;
+                    auto distance = scan->ranges[i];
+                    if (distance < maxRange && !isOnCar(alpha, distance)) {
+                        auto dist = getDistanceFromPoint(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        if (dist < minDistance) { // && dist >= 0
+                            minDistance = dist;
+                        }
                     }
                 }
 
                 start = scan->ranges.size() / 2 + static_cast<int>(frontAngle / angleIncrement);
                 end = scan->ranges.size();
                 for (int k = start; k < end; k++) {
-                    auto dist = getStraightDistanceToCar(scan->ranges[k], k);
-                    if (dist < maxRange && dist > 0 && dist < minDistance) {
-                        minDistance = dist;
+                    auto alpha = k * angleIncrement;
+                    auto distance = scan->ranges[k];
+                    if (distance < maxRange && !isOnCar(alpha, distance)) {
+                        auto dist = getDistanceFromPoint(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        if (dist < minDistance) { // && dist >= 0
+                            minDistance = dist;
+                        }
                     }
                 }
             }
@@ -144,7 +152,6 @@ namespace emergency_stop {
                 int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
                 int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
                 for (int j = start; j < end && j < scan->ranges.size(); j++) {
-                    // we might see the camera in the laser scan
                     auto dist = getStraightDistanceToCar(scan->ranges[j], j);
                     if (dist < maxRange && dist > 0 && dist < minDistance && isOnStraightPath((abs(j-180))*angleIncrement, scan->ranges[j], true)) {
                         minDistance = dist;
@@ -158,10 +165,13 @@ namespace emergency_stop {
                 int start = scan->ranges.size() / 4;
                 int end = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
                 for (int j = start; j < end && j < scan->ranges.size(); j++) {
-                    // we might see the camera in the laser scan
-                    auto dist = getStraightDistanceToCar(scan->ranges[j], j);
-                    if (dist < maxRange && dist > 0 && dist < minDistance) {
-                        minDistance = dist;
+                    auto alpha = j * angleIncrement;
+                    auto distance = scan->ranges[j];
+                    if (distance < maxRange && !isOnCar(alpha, distance)) {
+                        auto dist = getDistanceFromPoint(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        if (dist < minDistance) { // && dist >= 0
+                            minDistance = dist;
+                        }
                     }
                 }
             }
@@ -172,16 +182,21 @@ namespace emergency_stop {
                 int start = static_cast<int>(frontAngle / angleIncrement);
                 int end = 3 * scan->ranges.size() / 4;
                 for (int j = start; j < end && j < scan->ranges.size(); j++) {
-                    // we might see the camera in the laser scan
-                    auto dist = getStraightDistanceToCar(scan->ranges[j], j);
-                    if (dist < maxRange && dist > 0 && dist < minDistance) {
-                        minDistance = dist;
+                    auto alpha = j * angleIncrement;
+                    auto distance = scan->ranges[j];
+                    if (distance < maxRange && !isOnCar(alpha, distance)) {
+                        auto dist = getDistanceFromPoint(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        if (dist < minDistance) { // && dist >= 0
+                            minDistance = dist;
+                        }
                     }
                 }
             }
         }
 
         obstacleDistance = minDistance;
+
+        // EMERGENCY STOP LOGIC:
         // based on speed, distance and deceleration, decide if EmergencyStop
         if (minDistance <= stopDistance) {
             safeSpeedPWM = 0;
@@ -318,7 +333,80 @@ namespace emergency_stop {
         }
     }
 
+    double EmergencyStop::getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR, double turningRadiusOF, Direction direction, Orientation orientation) {
+        // project points on rear axle (working with virtual lidar on middle of rear axle)
+        auto projAlpha = projectOnRearAxleAngle(angle, distance);
+        auto projDist = projectOnRearAxleDist(angle, distance);
+
+        if (0 <= projAlpha && projAlpha < DEG90INRAD) {
+            return processQuadrantA(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+        }
+        if (DEG90INRAD <= projAlpha && projAlpha < DEG180INRAD) {
+            return processQuadrantB(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+        }
+        if (DEG180INRAD <= projAlpha && projAlpha < DEG270INRAD) {
+            return processQuadrantC(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+        }
+        if (DEG270INRAD <= projAlpha && projAlpha < DEG360INRAD) {
+            return processQuadrantD(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+        }
+        return std::numeric_limits<double>::infinity();
+    }
+
+    double
+    EmergencyStop::processQuadrantA(double angle, double dist, double r, double rIR, double rOF, Direction direction,
+                                    Orientation orientation) {
+        auto alpha = DEG90INRAD - angle;
+        auto a = dist * sin(alpha);
+        auto b = dist * cos(alpha);
+        double x;
+        double alpha_
+
+        if (direction == Direction::FORWARD && orientation == Orientation::LEFT) {
+            if (b < r) {
+                x = hypotenuse(a, r - b);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                }
+            } else if (b > r) {
+                x = hypotenuse(a, b - r);
+            } else {
+                x = a;
+            }
+
+
+
+
+        }
+
+    }
+
+    double
+    EmergencyStop::processQuadrantB(double angle, double dist, double r, double rIR, double rOF, Direction direction,
+                                    Orientation orientation) {
+        auto alpha = angle - DEG90INRAD;
+        auto a = dist * sin(alpha);
+        auto b = dist * cos(alpha);
+    }
+
+    double
+    EmergencyStop::processQuadrantC(double angle, double dist, double r, double rIR, double rOF, Direction direction,
+                                    Orientation orientation) {
+        auto alpha = DEG270INRAD - angle;
+        auto a = dist * sin(alpha);
+        auto b = dist * cos(alpha);
+    }
+
+    double
+    EmergencyStop::processQuadrantD(double angle, double dist, double r, double rIR, double rOF, Direction direction,
+                                    Orientation orientation) {
+        auto alpha = angle - DEG270INRAD;
+        auto a = dist * sin(alpha);
+        auto b = dist * cos(alpha);
+    }
+
     double EmergencyStop::getExactDistanceToCar(double dist, double rad) {
+        // working with real lidar
         double offsetFront = config.forward_minimum_distance;
         double offsetRear = config.reverse_minimum_distance;
         double angleFront = config.half_angle_front_init;
@@ -377,7 +465,7 @@ namespace emergency_stop {
         return 0;
     }
 
-    bool EmergencyStop::isOnCar(double dist, double rad) {
+    bool EmergencyStop::isOnCar(double rad, double dist) {
         double offsetFront = config.forward_minimum_distance;
         double offsetRear = config.reverse_minimum_distance;
         double angleFront = config.half_angle_front_init;
@@ -440,18 +528,8 @@ namespace emergency_stop {
         return config.wheelbase / tan(steeringAngle);
     }
 
-    double EmergencyStop::getX(double radius, double alpha, double d) {
-        auto t = cos(alpha) * d;
-        auto h = sin(alpha) * d;
-        auto s = radius - t;
-        auto tan_beta = h / s;
-        auto beta = atan(tan_beta);
-        auto x = s / cos(beta);
-        return x;
-    }
-
-    bool EmergencyStop::isOnPath(double radius, double x) {
-        return (x < (radius + config.car_width/2) && x > (radius - config.car_width/2));
+    bool EmergencyStop::isOnPath(double x, double rIR, double rOF) {
+        return ((rIR - config.safety_margin / 2) < x && x < (rOF + config.safety_margin / 2));
     }
 
     double EmergencyStop::calculateSafeSpeed(double distance, double deceleration, double targetQuotient) {
@@ -499,7 +577,7 @@ namespace emergency_stop {
 
     std_msgs::Float32 EmergencyStop::getCurrentTurningRadius() {
         std_msgs::Float32 msg;
-        msg.data = static_cast<float>(currentTurningRadius);
+        msg.data = static_cast<float>(turningRadius);
         return msg;
     }
 

@@ -69,7 +69,9 @@ namespace emergency_stop {
     private:
         /// dynamic config attribute
         emergency_stop::EmergencyStopConfig config;
-        double currentTurningRadius;
+        double turningRadius;
+        double turningRadiusIR;
+        double turningRadiusOF;
         double currentSteeringAngle = 0.0;
         double obstacleDistance;
         double currentSpeed = 0.0;
@@ -91,15 +93,21 @@ namespace emergency_stop {
 
         //void projectOnRearAxle(float *angle, float *distance, double offset);
 
+        double getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR, double turningRadiusOF, Direction direction, Orientation orientation);
+
+        double processQuadrantA(double angle, double dist, double r, double rIR, double rOF, Direction direction, Orientation orientation);
+
+        double processQuadrantB(double angle, double dist, double r, double rIR, double rOF, Direction direction, Orientation orientation);
+
+        double processQuadrantC(double angle, double dist, double r, double rIR, double rOF, Direction direction, Orientation orientation);
+
+        double processQuadrantD(double angle, double dist, double r, double rIR, double rOF, Direction direction, Orientation orientation);
+
         double getStraightDistanceToCar(double distanceToLidar, int deg_step);
 
         double getExactDistanceToCar(double dist, double rad);
 
         double getTurningRadius(double steeringAngle);
-
-        double getX(double radius, double alpha, double d);
-
-        bool isOnPath(double radius, double x);
 
         double calculateSafeSpeed(double distance, double deceleration, double targetQuotient);
 
@@ -107,7 +115,9 @@ namespace emergency_stop {
 
         bool isOnStraightPath(double posAngle, double distance, bool backward);
 
-        bool isOnCar(double dist, double rad);
+        bool isOnPath(double x, double rIR, double rOF);
+
+        bool isOnCar(double rad, double dist);
 
         std::string steers = "straight";
 

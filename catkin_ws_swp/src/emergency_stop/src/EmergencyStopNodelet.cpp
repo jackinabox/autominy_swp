@@ -39,16 +39,18 @@ namespace emergency_stop {
             emergencyStop = std::make_shared<EmergencyStop>();
 
             distanceToObstaclePublisher = pnh.advertise<std_msgs::Float32>("obstacle_distance", 1);
+            directDistanceToObstaclePublisher = pnh.advertise<std_msgs::Float32>("obstacle_distance_actual", 1);
             speedPublisher = pnh.advertise<autominy_msgs::SpeedCommand>("speed", 1);
             safeSpeedPublisher = pnh.advertise<autominy_msgs::SpeedCommand>("safeSpeed", 1);
             steerPublisher = pnh.advertise<std_msgs::String>("car_steers", 1);
             steerAngleSubPublisher = pnh.advertise<std_msgs::Float32>("car_steers_angle", 1);
             turningRadiusPublisher = pnh.advertise<std_msgs::Float32>("turning_radius", 1);
 
+
             scanSubscriber = pnh.subscribe("scan", 1, &EmergencyStopNodelet::onScan, this, ros::TransportHints().tcpNoDelay());
             wantedSpeedSubscriber = pnh.subscribe("wanted_speed", 1, &EmergencyStopNodelet::onWantedSpeed, this, ros::TransportHints().tcpNoDelay());
             currentSpeedSubscriber = pnh.subscribe("carstate/speed", 1, &EmergencyStopNodelet::onCurrentSpeed, this, ros::TransportHints().tcpNoDelay());
-            currentSteeringAngleSubscriber = pnh.subscribe("carstate/steering", 1, &EmergencyStopNodelet::onCurrentSteeringAngle, this, ros::TransportHints().tcpNoDelay());
+            currentSteeringAngleSubscriber = pnh.subscribe("/carstate/steering", 1, &EmergencyStopNodelet::onCurrentSteeringAngle, this, ros::TransportHints().tcpNoDelay());
 
             config_server_ = boost::make_shared<dynamic_reconfigure::Server<emergency_stop::EmergencyStopConfig> >(pnh);
             dynamic_reconfigure::Server<emergency_stop::EmergencyStopConfig>::CallbackType f;
@@ -63,8 +65,9 @@ namespace emergency_stop {
          */
         void onScan(sensor_msgs::LaserScanConstPtr const &msg) {
             emergencyStop->checkEmergencyStop(msg);
-            speedPublisher.publish(emergencyStop->getSpeedToPublish());
+            //speedPublisher.publish(emergencyStop->getSpeedToPublish());
             distanceToObstaclePublisher.publish(emergencyStop->getDistanceToObstacle());
+            directDistanceToObstaclePublisher.publish(emergencyStop->getDistanceFromCar());
             safeSpeedPublisher.publish(emergencyStop->getSafeSpeed());
             steerPublisher.publish(emergencyStop->getSteering());
             steerAngleSubPublisher.publish(emergencyStop->getSteeringAngleSub());
@@ -101,6 +104,7 @@ namespace emergency_stop {
         ros::Publisher speedPublisher;
         ros::Publisher safeSpeedPublisher;
         ros::Publisher distanceToObstaclePublisher;
+        ros::Publisher directDistanceToObstaclePublisher;
         ros::Publisher steerPublisher;
         ros::Publisher steerAngleSubPublisher;
         ros::Publisher turningRadiusPublisher;

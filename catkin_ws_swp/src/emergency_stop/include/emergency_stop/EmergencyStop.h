@@ -62,9 +62,12 @@ namespace emergency_stop {
 
         std_msgs::Float32 getDistanceToObstacle();
 
+        std_msgs::Float32 getDistanceFromCar();
+
         std_msgs::Float32 getSteeringAngleSub();
 
         std_msgs::Float32 getCurrentTurningRadius();
+
 
     private:
         /// dynamic config attribute
@@ -74,22 +77,18 @@ namespace emergency_stop {
         double turningRadiusOF;
         double currentSteeringAngle = 0.0;
         double obstacleDistance;
+        double obstacleDistanceActual;
         double currentSpeed = 0.0;
         double safeSpeedSI = 0.0;
         int16_t safeSpeedPWM = 0;
         int16_t wantedSpeed = 0;
         bool emergencyStop = true;
 
-        const DEG90INRAD =  M_PI * 0.5; // 1.5707963267948966;
-        const DEG180INRAD = M_PI;       // 3.1415926535897931;
-        const DEG270INRAD = M_PI * 1.5; // 4.7123889803846897;
-        const DEG360INRAD = M_PI * 2;   // 6.2831853071795862;
-
         double hypotenuse(double a, double b);
 
-        double projectOnRearAxleAngle(double angle, double distance, double offset=config.lidar_rear_axle_distance);
+        double projectOnRearAxleAngle(double angle, double distance, double offset); // offset=config.lidar_rear_axle_distance
 
-        double projectOnRearAxleDist(double angle, double distance, double offset=config.lidar_rear_axle_distance);
+        double projectOnRearAxleDist(double angle, double distance, double offset); // offset=config.lidar_rear_axle_distance
 
         //void projectOnRearAxle(float *angle, float *distance, double offset);
 

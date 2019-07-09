@@ -105,7 +105,7 @@ namespace emergency_stop {
 
         double getStraightDistanceToCar(double distanceToLidar, int deg_step);
 
-        double getExactDistanceToCar(double dist, double rad);
+        double getExactDistanceToCar(double rad, double dist);
 
         double getTurningRadius(double steeringAngle);
 

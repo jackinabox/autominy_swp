@@ -394,7 +394,7 @@ namespace emergency_stop {
         }
 
         if (direction == Direction::FORWARD && orientation == Orientation::RIGHT) {
-            if (b < r) {
+//            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
                     alpha_ = asin(a / x);
@@ -402,9 +402,9 @@ namespace emergency_stop {
                     return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                    std::numeric_limits<double>::infinity());
                 }
-            } else {
-                return std::numeric_limits<double>::infinity();
-            }
+//            } else {
+//                return std::numeric_limits<double>::infinity();
+//            }
         }
 
         if (direction == Direction::BACKWARD && orientation == Orientation::LEFT) {
@@ -438,7 +438,7 @@ namespace emergency_stop {
         }
 
         if (direction == Direction::BACKWARD && orientation == Orientation::RIGHT) {
-            if (b < r) {
+//            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
                     alpha_ = asin(a / x);
@@ -446,9 +446,9 @@ namespace emergency_stop {
                     return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                    std::numeric_limits<double>::infinity());
                 }
-            } else {
-                return std::numeric_limits<double>::infinity();
-            }
+//            } else {
+//                return std::numeric_limits<double>::infinity();
+//            }
         }
 
         return std::numeric_limits<double>::infinity();
@@ -531,7 +531,7 @@ namespace emergency_stop {
         }
 
         if (direction == Direction::BACKWARD && orientation == Orientation::RIGHT) {
-            if (b < r) {
+//            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
                     alpha_ = asin(a / x);
@@ -539,9 +539,9 @@ namespace emergency_stop {
                     return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                    std::numeric_limits<double>::infinity());
                 }
-            } else {
-                return std::numeric_limits<double>::infinity();
-            }
+//            } else {
+//                return std::numeric_limits<double>::infinity();
+//            }
         }
 
         return std::numeric_limits<double>::infinity();
@@ -558,20 +558,82 @@ namespace emergency_stop {
         double alpha_eff;
         double betaOffset;
 
+        /*
         if (direction == Direction::FORWARD && orientation == Orientation::LEFT) {
-
-        }
+            // do nothing
+        }*/
 
         if (direction == Direction::FORWARD && orientation == Orientation::RIGHT) {
-
+            if (b < r) {
+                x = hypotenuse(a, r - b);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    alpha_eff = DEG360INRAD - alpha_;
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            } else if (b > r) {
+                x = hypotenuse(a, b - r);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    alpha_eff = DEG180INRAD + alpha_;
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            } else {
+                x = a;
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = DEG270INRAD;
+                    betaOffset = calcOffsetAngle(r, direction);
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            }
         }
 
         if (direction == Direction::BACKWARD && orientation == Orientation::LEFT) {
-
+//            if (b < r) {
+                x = hypotenuse(a, r + b);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+//            } else {
+//                return std::numeric_limits<double>::infinity();
+//            }
         }
 
         if (direction == Direction::BACKWARD && orientation == Orientation::RIGHT) {
-
+            if (b < r) {
+                x = hypotenuse(a, r - b);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            } else if (b > r) {
+                x = hypotenuse(a, b - r);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    alpha_eff = DEG180INRAD - alpha_;
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            } else {
+                x = a;
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = DEG90INRAD;
+                    betaOffset = calcOffsetAngle(r, direction);
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            }
         }
     }
 
@@ -587,19 +649,90 @@ namespace emergency_stop {
         double betaOffset;
 
         if (direction == Direction::FORWARD && orientation == Orientation::LEFT) {
-
+//            if (b < r) {
+            x = hypotenuse(a, r + b);
+            if (isOnPath(x, rIR, rOF)) {
+                alpha_ = asin(a / x);
+                betaOffset = calcOffsetAngle(r, direction);
+                return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                               std::numeric_limits<double>::infinity());
+            }
+//            } else {
+//                return std::numeric_limits<double>::infinity();
+//            }
         }
 
         if (direction == Direction::FORWARD && orientation == Orientation::RIGHT) {
-
+            if (b < r) {
+                x = hypotenuse(a, r - b);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            } else if (b > r) {
+                x = hypotenuse(a, b - r);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    alpha_eff = DEG180INRAD - alpha_;
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            } else {
+                x = a;
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = DEG90INRAD;
+                    betaOffset = calcOffsetAngle(r, direction);
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            }
         }
 
         if (direction == Direction::BACKWARD && orientation == Orientation::LEFT) {
-
+//            if (b < r) {
+            x = hypotenuse(a, r + b);
+            if (isOnPath(x, rIR, rOF)) {
+                alpha_ = asin(a / x);
+                betaOffset = calcOffsetAngle(r, direction);
+                return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                               std::numeric_limits<double>::infinity());
+            }
+//            } else {
+//                return std::numeric_limits<double>::infinity();
+//            }
         }
 
         if (direction == Direction::BACKWARD && orientation == Orientation::RIGHT) {
-
+            if (b < r) {
+                x = hypotenuse(a, r - b);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    alpha_eff = DEG360INRAD - alpha_;
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            } else if (b > r) {
+                x = hypotenuse(a, b - r);
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = asin(a / x);
+                    betaOffset = calcOffsetAngle(r, direction);
+                    alpha_eff = DEG180INRAD + alpha_;
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            } else {
+                x = a;
+                if (isOnPath(x, rIR, rOF)) {
+                    alpha_ = DEG270INRAD;
+                    betaOffset = calcOffsetAngle(r, direction);
+                    return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
+                                                   std::numeric_limits<double>::infinity());
+                }
+            }
         }
     }
 
@@ -624,8 +757,8 @@ namespace emergency_stop {
         return acos((std::pow(a, 2) + std::pow(c, 2) - std::pow(b, 2)) / (2 * a * c));
     }
 
-    double EmergencyStop::getExactDistanceToCar(double dist, double rad) {
-        // working with real lidar
+    double EmergencyStop::getExactDistanceToCar(double rad, double dist) {
+        // works with actual lidar, not with the projected!
         double offsetFront = config.forward_minimum_distance;
         double offsetRear = config.reverse_minimum_distance;
         double angleFront = config.half_angle_front_init;
@@ -685,62 +818,7 @@ namespace emergency_stop {
     }
 
     bool EmergencyStop::isOnCar(double rad, double dist) {
-        double offsetFront = config.forward_minimum_distance;
-        double offsetRear = config.reverse_minimum_distance;
-        double angleFront = config.half_angle_front_init;
-        double angleRear = config.half_angle_back_init;
-        double alpha;
-        double a, b, c;
-
-        // front: approx. same distance -> because of radial bumper
-        if (angleFront >= rad && rad >= (DEG360INRAD - angleFront)) {
-            return dist < offsetFront;
-        }
-        if (angleFront < rad && rad <= DEG90INRAD) {
-            alpha = DEG90INRAD - rad;
-            b = config.car_width / 2;
-            a = b * tan(alpha);
-            c = hypotenuse(a, b);
-            return dist < c;
-        }
-        if (DEG90INRAD < rad && rad < (DEG180INRAD - angleRear)) {
-            alpha = rad - DEG90INRAD;
-            b = config.car_width / 2;
-            a = b * tan(alpha);
-            c = hypotenuse(a, b);
-            return dist < c;
-        }
-        if ((DEG180INRAD - angleRear) <= rad && rad < DEG180INRAD) {
-            alpha = DEG180INRAD - rad;
-            b = offsetRear;
-            a = b * tan(alpha);
-            c = hypotenuse(a, b);
-            return dist < c;
-        }
-        if (DEG180INRAD <= rad && rad <= (DEG180INRAD + offsetRear)) {
-            alpha = rad - DEG180INRAD;
-            b = offsetRear;
-            a = b * tan(alpha);
-            c = hypotenuse(a, b);
-            return dist < c;
-        }
-        if ((DEG180INRAD + offsetRear) < rad && rad <= DEG270INRAD) {
-            alpha = DEG270INRAD - rad;
-            b = config.car_width / 2;
-            a = b * tan(alpha);
-            c = hypotenuse(a, b);
-            return dist < c;
-        }
-        if (DEG270INRAD < rad && rad < (DEG360INRAD - angleFront)) {
-            alpha = rad - DEG270INRAD;
-            b = config.car_width / 2;
-            a = b * tan(alpha);
-            c = hypotenuse(a, b);
-            return dist < c;
-        }
-
-        // on coding error:
-        return true;
+        return getExactDistanceToCar(rad, dist) - config.dim_extension < 0;
     }
 
     double EmergencyStop::getTurningRadius(double steeringAngle) {
@@ -762,8 +840,7 @@ namespace emergency_stop {
         return distance * deceleration / std::pow(currentSpeed, 2);
     }
 
-
-    // works on actual lidar position & values
+    // works with actual lidar position & values
     bool EmergencyStop::isOnStraightPath(double posAngle, double distance, bool backward) {
         auto distanceFromMiddle = sin(posAngle) * distance;
         auto safetyWidth = 0.02;

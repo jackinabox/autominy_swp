@@ -19,7 +19,7 @@ namespace emergency_stop {
         BACKWARD = -1
     };
 
-    enum class Orientation : int8_t {
+    enum class Steering : int8_t {
         STRAIGHT = 0,
         LEFT = 1,
         RIGHT = -1
@@ -92,15 +92,15 @@ namespace emergency_stop {
 
         //void projectOnRearAxle(float *angle, float *distance, double offset);
 
-        double getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR, double turningRadiusOF, Direction direction, Orientation orientation);
+        double getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR, double turningRadiusOF, Direction direction, Steering steering);
 
-        double processQuadrantA(double angle, double dist, double r, double rIR, double rOF, Direction direction, Orientation orientation);
+        double processQuadrantA(double angle, double dist, double r, double rIR, double rOF, Direction direction, Steering steering);
 
-        double processQuadrantB(double angle, double dist, double r, double rIR, double rOF, Direction direction, Orientation orientation);
+        double processQuadrantB(double angle, double dist, double r, double rIR, double rOF, Direction direction, Steering steering);
 
-        double processQuadrantC(double angle, double dist, double r, double rIR, double rOF, Direction direction, Orientation orientation);
+        double processQuadrantC(double angle, double dist, double r, double rIR, double rOF, Direction direction, Steering steering);
 
-        double processQuadrantD(double angle, double dist, double r, double rIR, double rOF, Direction direction, Orientation orientation);
+        double processQuadrantD(double angle, double dist, double r, double rIR, double rOF, Direction direction, Steering steering);
 
         double getStraightDistanceToCar(double distanceToLidar, int deg_step);
 
@@ -126,7 +126,7 @@ namespace emergency_stop {
 
         Direction direction = Direction::FORWARD;
 
-        Orientation orientation = Orientation ::STRAIGHT;
+        Steering steering = Steering::STRAIGHT;
 
     };
 }

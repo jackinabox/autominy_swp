@@ -17,25 +17,23 @@ namespace emergency_stop {
         if (emergencyStop == false) {
             safeSpeedPWM = wantedSpeed;
         }
+        emergencyStop = false;
 
         if (wantedSpeed < 0.0) {
             direction = Direction::BACKWARD;
         } else if (wantedSpeed > 0.0) {
             direction = Direction::FORWARD;
         }
-        // * static_cast<double>(direction);
-
-        //currentSteeringAngle = config.currentSteeringAngle;
 
         if (config.steering_angle_tolerance >= currentSteeringAngle && currentSteeringAngle >= -config.steering_angle_tolerance) {
-            orientation = Orientation::STRAIGHT;
+            steering = Steering::STRAIGHT;
         }
         else{
             if (currentSteeringAngle < -config.steering_angle_tolerance) {
-                orientation = Orientation::RIGHT;
+                steering = Steering::RIGHT;
             }
             else{
-                orientation = Orientation::LEFT;
+                steering = Steering::LEFT;
             }
             turningRadius = getTurningRadius(currentSteeringAngle);
             // inner rear tire
@@ -44,30 +42,31 @@ namespace emergency_stop {
             turningRadiusOF = hypotenuse(turningRadiusIR + config.track, config.wheelbase);
         }
 
-
-        double stopDistance = config.stop_distance;
-        double targetQuotient = config.target_quotient;
-        double negAcc = config.negative_acceleration;
-        double maxRange = config.maximum_lidar_radius;
-
-        emergencyStop = false;
-        auto minDistance = std::numeric_limits<double>::infinity(); // init minDist
-        auto angleIncrement = scan->angle_increment;
-
+        auto stopDistance = config.stop_distance;
+        auto targetQuotient = config.target_quotient;
+        auto negAcc = config.negative_acceleration;
+        auto maxRange = config.maximum_lidar_radius;
         auto frontAngle = config.half_angle_front_init;
         auto backAngle = config.half_angle_back_init;
 
-        if(direction == Direction::FORWARD) {
-            // DEPENDING ON STEERING DIRECTION
+        // init minDist
+        auto minDistance = std::numeric_limits<double>::infinity();
+        auto angleIncrement = scan->angle_increment;
 
-            if(orientation == Orientation::STRAIGHT) {
+        // for debugging of ExactDistance
+        obstacleDistanceActual = std::numeric_limits<double>::infinity();
+
+        if(direction == Direction::FORWARD) {
+
+            if(steering == Steering::STRAIGHT) {
                 steers = "straight";
 
                 auto start = 0;
                 auto end = static_cast<int>(frontAngle / angleIncrement);
                 for (int i = start; i < scan->ranges.size() && i < end; i++) {
-                    if(!isOnCar(i * angleIncrement, scan->ranges[i])) {
-                        obstacleDistanceActual = getExactDistanceToCar(i*angleIncrement, scan->ranges[i]);
+                    double tmp = getExactDistanceToCar(i*angleIncrement, scan->ranges[i]);
+                    if(tmp >= 0 && tmp < obstacleDistanceActual) {
+                        obstacleDistanceActual = tmp;
                     }
                     auto dist = getStraightDistanceToCar(scan->ranges[i], i);
                     if (dist < maxRange && dist > 0 && dist < minDistance && isOnStraightPath(i*angleIncrement, scan->ranges[i], false)) {
@@ -78,8 +77,9 @@ namespace emergency_stop {
                 start = scan->ranges.size() - 1 - static_cast<int>(frontAngle / angleIncrement);
                 end = scan->ranges.size();
                 for (int k = start; k < end; k++) {
-                    if(!isOnCar(k * angleIncrement, scan->ranges[k])) {
-                        obstacleDistanceActual = getExactDistanceToCar(k*angleIncrement, scan->ranges[k]);
+                    double tmp = getExactDistanceToCar(k*angleIncrement, scan->ranges[k]);
+                    if(tmp >= 0 && tmp < obstacleDistanceActual) {
+                        obstacleDistanceActual = tmp;
                     }
                     auto dist = getStraightDistanceToCar(scan->ranges[k], k);
                     if (dist < maxRange && dist > 0 && dist < minDistance && isOnStraightPath((360-k)*angleIncrement, scan->ranges[k], false)) {
@@ -88,7 +88,7 @@ namespace emergency_stop {
                 }
             }
 
-            if (orientation == Orientation::LEFT) {
+            if (steering == Steering::LEFT) {
                 steers = "left";
 
                 auto start = 0;
@@ -97,8 +97,13 @@ namespace emergency_stop {
                     auto alpha = i * angleIncrement;
                     auto distance = scan->ranges[i];
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
-                        obstacleDistanceActual = getExactDistanceToCar(alpha, distance);
-                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        // Debugging
+                        double tmp = getExactDistanceToCar(alpha, distance);
+                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                            obstacleDistanceActual = tmp;
+                        }
+
+                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, steering);
                         if (dist < minDistance) { // && dist >= 0
                             minDistance = dist;
                         }
@@ -111,8 +116,13 @@ namespace emergency_stop {
                     auto alpha = k * angleIncrement;
                     auto distance = scan->ranges[k];
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
-                        obstacleDistanceActual = getExactDistanceToCar(alpha, distance);
-                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        // Debugging
+                        double tmp = getExactDistanceToCar(alpha, distance);
+                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                            obstacleDistanceActual = tmp;
+                        }
+
+                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, steering);
                         if (dist < minDistance) { // && dist >= 0
                             minDistance = dist;
                         }
@@ -120,7 +130,7 @@ namespace emergency_stop {
                 }
             }
 
-            if(orientation == Orientation::RIGHT) {
+            if(steering == Steering::RIGHT) {
                 steers = "right";
 
                 auto start = 0;
@@ -129,8 +139,13 @@ namespace emergency_stop {
                     auto alpha = i * angleIncrement;
                     auto distance = scan->ranges[i];
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
-                        obstacleDistanceActual = getExactDistanceToCar(alpha, distance);
-                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        // Debugging
+                        double tmp = getExactDistanceToCar(alpha, distance);
+                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                            obstacleDistanceActual = tmp;
+                        }
+
+                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, steering);
                         if (dist < minDistance) { // && dist >= 0
                             minDistance = dist;
                         }
@@ -143,8 +158,13 @@ namespace emergency_stop {
                     auto alpha = k * angleIncrement;
                     auto distance = scan->ranges[k];
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
-                        obstacleDistanceActual = getExactDistanceToCar(alpha, distance);
-                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        // Debugging
+                        double tmp = getExactDistanceToCar(alpha, distance);
+                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                            obstacleDistanceActual = tmp;
+                        }
+
+                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, steering);
                         if (dist < minDistance) { // && dist >= 0
                             minDistance = dist;
                         }
@@ -154,16 +174,16 @@ namespace emergency_stop {
 
 
         } else { // direction == Direction::BACKWARD
-            // DEPENDING ON STEERING DIRECTION
 
-            if(orientation == Orientation::STRAIGHT) {
+            if(steering == Steering::STRAIGHT) {
                 steers = "straight";
                 // back left to back right
                 int start = scan->ranges.size() / 2 - static_cast<int>(backAngle / angleIncrement);
                 int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
                 for (int j = start; j < end && j < scan->ranges.size(); j++) {
-                    if(!isOnCar(j * angleIncrement, scan->ranges[j])) {
-                        obstacleDistanceActual = getExactDistanceToCar(j*angleIncrement, scan->ranges[j]);
+                    double tmp = getExactDistanceToCar(j*angleIncrement, scan->ranges[j]);
+                    if(tmp >= 0 && tmp < obstacleDistanceActual) {
+                        obstacleDistanceActual = tmp;
                     }
                     auto dist = getStraightDistanceToCar(scan->ranges[j], j);
                     if (dist < maxRange && dist > 0 && dist < minDistance && isOnStraightPath((abs(j-180))*angleIncrement, scan->ranges[j], true)) {
@@ -172,7 +192,7 @@ namespace emergency_stop {
                 }
             }
 
-            if(orientation == Orientation::LEFT) {
+            if(steering == Steering::LEFT) {
                 steers = "left";
 
                 int start = scan->ranges.size() / 4;
@@ -181,8 +201,13 @@ namespace emergency_stop {
                     auto alpha = j * angleIncrement;
                     auto distance = scan->ranges[j];
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
-                        obstacleDistanceActual = getExactDistanceToCar(alpha, distance);
-                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        // Debugging
+                        double tmp = getExactDistanceToCar(alpha, distance);
+                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                            obstacleDistanceActual = tmp;
+                        }
+
+                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, steering);
                         if (dist < minDistance) { // && dist >= 0
                             minDistance = dist;
                         }
@@ -190,7 +215,7 @@ namespace emergency_stop {
                 }
             }
 
-            if(orientation == Orientation::RIGHT) {
+            if(steering == Steering::RIGHT) {
                 steers = "right";
 
                 int start = static_cast<int>(frontAngle / angleIncrement);
@@ -199,8 +224,13 @@ namespace emergency_stop {
                     auto alpha = j * angleIncrement;
                     auto distance = scan->ranges[j];
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
-                        obstacleDistanceActual = getExactDistanceToCar(alpha, distance);
-                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, orientation);
+                        // Debugging
+                        double tmp = getExactDistanceToCar(alpha, distance);
+                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                            obstacleDistanceActual = tmp;
+                        }
+
+                        auto dist = getDistanceToCarOnPath(alpha, distance, turningRadius, turningRadiusIR, turningRadiusOF, direction, steering);
                         if (dist < minDistance) { // && dist >= 0
                             minDistance = dist;
                         }
@@ -350,33 +380,33 @@ namespace emergency_stop {
 
     double
     EmergencyStop::getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR,
-                                          double turningRadiusOF, Direction direction, Orientation orientation) {
+                                          double turningRadiusOF, Direction direction, Steering steering) {
         // project points on rear axle (working with virtual lidar on middle of rear axle)
         auto projAlpha = projectOnRearAxleAngle(angle, distance, config.lidar_rear_axle_distance);
         auto projDist = projectOnRearAxleDist(angle, distance, config.lidar_rear_axle_distance);
 
         if (0 <= projAlpha && projAlpha < DEG90INRAD) {
             return processQuadrantA(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-                                    orientation);
+                                    steering);
         }
         if (DEG90INRAD <= projAlpha && projAlpha < DEG180INRAD) {
             return processQuadrantB(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-                                    orientation);
+                                    steering);
         }
         if (DEG180INRAD <= projAlpha && projAlpha < DEG270INRAD) {
             return processQuadrantC(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-                                    orientation);
+                                    steering);
         }
         if (DEG270INRAD <= projAlpha && projAlpha < DEG360INRAD) {
             return processQuadrantD(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-                                    orientation);
+                                    steering);
         }
         return std::numeric_limits<double>::infinity();
     }
 
     double
     EmergencyStop::processQuadrantA(double angle, double dist, double r, double rIR, double rOF, Direction direction,
-                                    Orientation orientation) {
+                                    Steering steering) {
         auto alpha = DEG90INRAD - angle;
         auto a = dist * sin(alpha);
         auto b = dist * cos(alpha);
@@ -385,7 +415,7 @@ namespace emergency_stop {
         double alpha_eff;
         double betaOffset;
 
-        if (direction == Direction::FORWARD && orientation == Orientation::LEFT) {
+        if (direction == Direction::FORWARD && steering == Steering::LEFT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -414,7 +444,7 @@ namespace emergency_stop {
             }
         }
 
-        if (direction == Direction::FORWARD && orientation == Orientation::RIGHT) {
+        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
 //            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -428,7 +458,7 @@ namespace emergency_stop {
 //            }
         }
 
-        if (direction == Direction::BACKWARD && orientation == Orientation::LEFT) {
+        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -458,7 +488,7 @@ namespace emergency_stop {
             }
         }
 
-        if (direction == Direction::BACKWARD && orientation == Orientation::RIGHT) {
+        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
 //            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -477,7 +507,7 @@ namespace emergency_stop {
 
     double
     EmergencyStop::processQuadrantB(double angle, double dist, double r, double rIR, double rOF, Direction direction,
-                                    Orientation orientation) {
+                                    Steering steering) {
         auto alpha = angle - DEG90INRAD;
         auto a = dist * sin(alpha);
         auto b = dist * cos(alpha);
@@ -486,7 +516,7 @@ namespace emergency_stop {
         double alpha_eff;
         double betaOffset;
 
-        if (direction == Direction::FORWARD && orientation == Orientation::LEFT) {
+        if (direction == Direction::FORWARD && steering == Steering::LEFT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -517,12 +547,12 @@ namespace emergency_stop {
         }
 
         /*
-        if (direction == Direction::FORWARD && orientation == Orientation::RIGHT) {
+        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
             // do nothing
         }
         */
 
-        if (direction == Direction::BACKWARD && orientation == Orientation::LEFT) {
+        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -551,7 +581,7 @@ namespace emergency_stop {
             }
         }
 
-        if (direction == Direction::BACKWARD && orientation == Orientation::RIGHT) {
+        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
 //            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -570,7 +600,7 @@ namespace emergency_stop {
 
     double
     EmergencyStop::processQuadrantC(double angle, double dist, double r, double rIR, double rOF, Direction direction,
-                                    Orientation orientation) {
+                                    Steering steering) {
         auto alpha = DEG270INRAD - angle;
         auto a = dist * sin(alpha);
         auto b = dist * cos(alpha);
@@ -580,11 +610,11 @@ namespace emergency_stop {
         double betaOffset;
 
         /*
-        if (direction == Direction::FORWARD && orientation == Orientation::LEFT) {
+        if (direction == Direction::FORWARD && steering == Steering::LEFT) {
             // do nothing
         }*/
 
-        if (direction == Direction::FORWARD && orientation == Orientation::RIGHT) {
+        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -614,7 +644,7 @@ namespace emergency_stop {
             }
         }
 
-        if (direction == Direction::BACKWARD && orientation == Orientation::LEFT) {
+        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
 //            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -628,7 +658,7 @@ namespace emergency_stop {
 //            }
         }
 
-        if (direction == Direction::BACKWARD && orientation == Orientation::RIGHT) {
+        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -660,7 +690,7 @@ namespace emergency_stop {
 
     double
     EmergencyStop::processQuadrantD(double angle, double dist, double r, double rIR, double rOF, Direction direction,
-                                    Orientation orientation) {
+                                    Steering steering) {
         auto alpha = angle - DEG270INRAD;
         auto a = dist * sin(alpha);
         auto b = dist * cos(alpha);
@@ -669,7 +699,7 @@ namespace emergency_stop {
         double alpha_eff;
         double betaOffset;
 
-        if (direction == Direction::FORWARD && orientation == Orientation::LEFT) {
+        if (direction == Direction::FORWARD && steering == Steering::LEFT) {
 //            if (b < r) {
             x = hypotenuse(a, r + b);
             if (isOnPath(x, rIR, rOF)) {
@@ -683,7 +713,7 @@ namespace emergency_stop {
 //            }
         }
 
-        if (direction == Direction::FORWARD && orientation == Orientation::RIGHT) {
+        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -712,7 +742,7 @@ namespace emergency_stop {
             }
         }
 
-        if (direction == Direction::BACKWARD && orientation == Orientation::LEFT) {
+        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
 //            if (b < r) {
             x = hypotenuse(a, r + b);
             if (isOnPath(x, rIR, rOF)) {
@@ -726,7 +756,7 @@ namespace emergency_stop {
 //            }
         }
 
-        if (direction == Direction::BACKWARD && orientation == Orientation::RIGHT) {
+        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {

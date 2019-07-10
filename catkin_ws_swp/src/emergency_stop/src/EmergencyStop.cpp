@@ -53,8 +53,15 @@ namespace emergency_stop {
         auto minDistance = std::numeric_limits<double>::infinity();
         auto angleIncrement = scan->angle_increment;
 
-        // for debugging of ExactDistance
+        // nearest object to car
         obstacleDistanceActual = std::numeric_limits<double>::infinity();
+
+        for (int i = 0; i < scan->ranges.size(); i++) {
+            double tmp = getExactDistanceToCar(i*angleIncrement, scan->ranges[i]);
+            if(tmp > 0 && tmp < obstacleDistanceActual) {
+                obstacleDistanceActual = tmp;
+            }
+        }
 
         if(direction == Direction::FORWARD) {
 
@@ -65,7 +72,7 @@ namespace emergency_stop {
                 auto end = static_cast<int>(frontAngle / angleIncrement);
                 for (int i = start; i < scan->ranges.size() && i < end; i++) {
                     double tmp = getExactDistanceToCar(i*angleIncrement, scan->ranges[i]);
-                    if(tmp >= 0 && tmp < obstacleDistanceActual) {
+                    if(tmp > 0 && tmp < obstacleDistanceActual) {
                         obstacleDistanceActual = tmp;
                     }
                     auto dist = getStraightDistanceToCar(scan->ranges[i], i);
@@ -78,7 +85,7 @@ namespace emergency_stop {
                 end = scan->ranges.size();
                 for (int k = start; k < end; k++) {
                     double tmp = getExactDistanceToCar(k*angleIncrement, scan->ranges[k]);
-                    if(tmp >= 0 && tmp < obstacleDistanceActual) {
+                    if(tmp > 0 && tmp < obstacleDistanceActual) {
                         obstacleDistanceActual = tmp;
                     }
                     auto dist = getStraightDistanceToCar(scan->ranges[k], k);
@@ -99,7 +106,7 @@ namespace emergency_stop {
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
                         // Debugging
                         double tmp = getExactDistanceToCar(alpha, distance);
-                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                        if(tmp < obstacleDistanceActual && tmp > 0) {
                             obstacleDistanceActual = tmp;
                         }
 
@@ -118,7 +125,7 @@ namespace emergency_stop {
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
                         // Debugging
                         double tmp = getExactDistanceToCar(alpha, distance);
-                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                        if(tmp < obstacleDistanceActual && tmp > 0) {
                             obstacleDistanceActual = tmp;
                         }
 
@@ -141,7 +148,7 @@ namespace emergency_stop {
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
                         // Debugging
                         double tmp = getExactDistanceToCar(alpha, distance);
-                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                        if(tmp < obstacleDistanceActual && tmp > 0) {
                             obstacleDistanceActual = tmp;
                         }
 
@@ -160,7 +167,7 @@ namespace emergency_stop {
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
                         // Debugging
                         double tmp = getExactDistanceToCar(alpha, distance);
-                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                        if(tmp < obstacleDistanceActual && tmp > 0) {
                             obstacleDistanceActual = tmp;
                         }
 
@@ -182,7 +189,7 @@ namespace emergency_stop {
                 int end = scan->ranges.size() / 2 + static_cast<int>(backAngle / angleIncrement);
                 for (int j = start; j < end && j < scan->ranges.size(); j++) {
                     double tmp = getExactDistanceToCar(j*angleIncrement, scan->ranges[j]);
-                    if(tmp >= 0 && tmp < obstacleDistanceActual) {
+                    if(tmp > 0 && tmp < obstacleDistanceActual) {
                         obstacleDistanceActual = tmp;
                     }
                     auto dist = getStraightDistanceToCar(scan->ranges[j], j);
@@ -203,7 +210,7 @@ namespace emergency_stop {
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
                         // Debugging
                         double tmp = getExactDistanceToCar(alpha, distance);
-                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                        if(tmp < obstacleDistanceActual && tmp > 0) {
                             obstacleDistanceActual = tmp;
                         }
 
@@ -226,7 +233,7 @@ namespace emergency_stop {
                     if (distance < maxRange && !isOnCar(alpha, distance)) {
                         // Debugging
                         double tmp = getExactDistanceToCar(alpha, distance);
-                        if(tmp < obstacleDistanceActual && tmp >= 0) {
+                        if(tmp < obstacleDistanceActual && tmp > 0) {
                             obstacleDistanceActual = tmp;
                         }
 
@@ -276,7 +283,7 @@ namespace emergency_stop {
             return atan(a / (b + offset));
         }
 
-        if (angle >= DEG90INRAD and angle < DEG180INRAD) { // 90 - 180 deg
+        else if (angle >= DEG90INRAD and angle < DEG180INRAD) { // 90 - 180 deg
             angle = DEG180INRAD - angle;
             a = sin(angle) * distance;
             b = cos(angle) * distance;
@@ -291,7 +298,7 @@ namespace emergency_stop {
             }
         }
 
-        if (angle >= DEG180INRAD and angle < DEG270INRAD) { // 180 - 270 deg
+        else if (angle >= DEG180INRAD and angle < DEG270INRAD) { // 180 - 270 deg
             angle = angle - DEG180INRAD;
             a = sin(angle) * distance;
             b = cos(angle) * distance;
@@ -306,7 +313,7 @@ namespace emergency_stop {
             }
         }
 
-        if (angle >= DEG270INRAD and angle < DEG360INRAD) { // 270 - 360 deg
+        else { //if (angle >= DEG270INRAD and angle < DEG360INRAD) { // 270 - 360 deg
             angle = DEG360INRAD - angle;
             a = sin(angle) * distance;
             b = cos(angle) * distance;
@@ -445,7 +452,7 @@ namespace emergency_stop {
         }
 
         if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
-//            if (b < r) {
+            if (b < (config.car_width / 2)) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
                     alpha_ = asin(a / x);
@@ -453,9 +460,9 @@ namespace emergency_stop {
                     return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                    std::numeric_limits<double>::infinity());
                 }
-//            } else {
-//                return std::numeric_limits<double>::infinity();
-//            }
+            } else {
+                return std::numeric_limits<double>::infinity();
+            }
         }
 
         if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
@@ -489,17 +496,16 @@ namespace emergency_stop {
         }
 
         if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
-//            if (b < r) {
-                x = hypotenuse(a, r + b);
+            if (b < r && b > (config.car_width / 2)) {                x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
                     alpha_ = asin(a / x);
                     betaOffset = calcOffsetAngle(r, direction);
                     return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                    std::numeric_limits<double>::infinity());
                 }
-//            } else {
-//                return std::numeric_limits<double>::infinity();
-//            }
+            } else {
+                return std::numeric_limits<double>::infinity();
+            }
         }
 
         return std::numeric_limits<double>::infinity();
@@ -516,7 +522,7 @@ namespace emergency_stop {
         double alpha_eff;
         double betaOffset;
 
-        if (direction == Direction::FORWARD && steering == Steering::LEFT) {
+        /*if (direction == Direction::FORWARD && steering == Steering::LEFT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -544,7 +550,7 @@ namespace emergency_stop {
                                                    std::numeric_limits<double>::infinity());
                 }
             }
-        }
+        }*/
 
         /*
         if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
@@ -582,7 +588,7 @@ namespace emergency_stop {
         }
 
         if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
-//            if (b < r) {
+            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
                     alpha_ = asin(a / x);
@@ -590,9 +596,9 @@ namespace emergency_stop {
                     return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                    std::numeric_limits<double>::infinity());
                 }
-//            } else {
-//                return std::numeric_limits<double>::infinity();
-//            }
+            } else {
+                return std::numeric_limits<double>::infinity();
+            }
         }
 
         return std::numeric_limits<double>::infinity();
@@ -645,7 +651,7 @@ namespace emergency_stop {
         }
 
         if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
-//            if (b < r) {
+            if (b < r) {
                 x = hypotenuse(a, r + b);
                 if (isOnPath(x, rIR, rOF)) {
                     alpha_ = asin(a / x);
@@ -653,9 +659,9 @@ namespace emergency_stop {
                     return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                    std::numeric_limits<double>::infinity());
                 }
-//            } else {
-//                return std::numeric_limits<double>::infinity();
-//            }
+            } else {
+                return std::numeric_limits<double>::infinity();
+            }
         }
 
         if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
@@ -700,7 +706,7 @@ namespace emergency_stop {
         double betaOffset;
 
         if (direction == Direction::FORWARD && steering == Steering::LEFT) {
-//            if (b < r) {
+            if (b < (config.car_width / 2)) {
             x = hypotenuse(a, r + b);
             if (isOnPath(x, rIR, rOF)) {
                 alpha_ = asin(a / x);
@@ -708,9 +714,9 @@ namespace emergency_stop {
                 return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                std::numeric_limits<double>::infinity());
             }
-//            } else {
-//                return std::numeric_limits<double>::infinity();
-//            }
+            } else {
+                return std::numeric_limits<double>::infinity();
+            }
         }
 
         if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
@@ -743,7 +749,7 @@ namespace emergency_stop {
         }
 
         if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
-//            if (b < r) {
+            if (b < r && b > (config.car_width / 2)) {
             x = hypotenuse(a, r + b);
             if (isOnPath(x, rIR, rOF)) {
                 alpha_ = asin(a / x);
@@ -751,9 +757,9 @@ namespace emergency_stop {
                 return boost::algorithm::clamp(calcEffectiveDistance(alpha_, betaOffset, rIR), 0,
                                                std::numeric_limits<double>::infinity());
             }
-//            } else {
-//                return std::numeric_limits<double>::infinity();
-//            }
+            } else {
+                return std::numeric_limits<double>::infinity();
+            }
         }
 
         if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
@@ -819,53 +825,54 @@ namespace emergency_stop {
 
         // front: approx. same distance -> because of radial bumper
         if (angleFront >= rad && rad >= (DEG360INRAD - angleFront)) {
-            return offsetFront;
+            return dist - offsetFront;
         }
-        if (angleFront < rad && rad <= DEG90INRAD) {
+        else if (angleFront < rad && rad <= DEG90INRAD) {
             alpha = DEG90INRAD - rad;
             b = config.car_width / 2;
             a = b * tan(alpha);
             c = hypotenuse(a, b);
             return dist - c;
         }
-        if (DEG90INRAD < rad && rad < (DEG180INRAD - angleRear)) {
+        else if (DEG90INRAD < rad && rad < (DEG180INRAD - angleRear)) {
             alpha = rad - DEG90INRAD;
             b = config.car_width / 2;
             a = b * tan(alpha);
             c = hypotenuse(a, b);
             return dist - c;
         }
-        if ((DEG180INRAD - angleRear) <= rad && rad < DEG180INRAD) {
+        else if ((DEG180INRAD - angleRear) <= rad && rad < DEG180INRAD) {
             alpha = DEG180INRAD - rad;
             b = offsetRear;
             a = b * tan(alpha);
             c = hypotenuse(a, b);
             return dist - c;
         }
-        if (DEG180INRAD <= rad && rad <= (DEG180INRAD + offsetRear)) {
+        else if (DEG180INRAD <= rad && rad <= (DEG180INRAD + angleRear)) {
             alpha = rad - DEG180INRAD;
             b = offsetRear;
             a = b * tan(alpha);
             c = hypotenuse(a, b);
             return dist - c;
         }
-        if ((DEG180INRAD + offsetRear) < rad && rad <= DEG270INRAD) {
+        else if ((DEG180INRAD + angleRear) < rad && rad <= DEG270INRAD) {
             alpha = DEG270INRAD - rad;
             b = config.car_width / 2;
             a = b * tan(alpha);
             c = hypotenuse(a, b);
             return dist - c;
         }
-        if (DEG270INRAD < rad && rad < (DEG360INRAD - angleFront)) {
+        else if (DEG270INRAD < rad && rad < (DEG360INRAD - angleFront)) {
             alpha = rad - DEG270INRAD;
             b = config.car_width / 2;
             a = b * tan(alpha);
             c = hypotenuse(a, b);
             return dist - c;
         }
-
         // on coding error:
-        return 0;
+        else {
+            return std::numeric_limits<double>::infinity();
+        }
     }
 
     bool EmergencyStop::isOnCar(double rad, double dist) {
@@ -895,10 +902,10 @@ namespace emergency_stop {
     // works with actual lidar position & values
     bool EmergencyStop::isOnStraightPath(double posAngle, double distance, bool backward) {
         auto distanceFromMiddle = sin(posAngle) * distance;
-        auto safetyWidth = 0.02;
-        if(backward){
-            safetyWidth = 0.04;
-        }
+        auto safetyWidth = config.safety_margin;
+//        if(backward){
+//            safetyWidth = 0.04;
+//        }
         return distanceFromMiddle < ((config.car_width + safetyWidth) / 2);
     }
 

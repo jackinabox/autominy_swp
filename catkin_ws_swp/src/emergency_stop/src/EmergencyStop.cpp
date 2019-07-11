@@ -791,7 +791,7 @@ namespace emergency_stop {
         double a, b, c;
 
         // front: approx. same distance -> because of radial bumper
-        if (angleFront >= rad && rad >= (DEG360INRAD - angleFront)) {
+        if (angleFront >= rad || rad >= (DEG360INRAD - angleFront)) {
             return dist - offsetFront;
         }
         else if (angleFront < rad && rad <= DEG90INRAD) {

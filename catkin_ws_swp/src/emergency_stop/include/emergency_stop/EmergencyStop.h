@@ -90,7 +90,7 @@ namespace emergency_stop {
 
         double projectOnRearAxleDist(double angle, double distance, double offset); // offset=config.lidar_rear_axle_distance
 
-        //void projectOnRearAxle(float *angle, float *distance, double offset);
+        void projectOnRearAxle(double angle, double distance, double &projAlpha, double &projDist, double offset); // offset=config.lidar_rear_axle_distance
 
         double getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR, double turningRadiusOF, Direction direction, Steering steering);
 

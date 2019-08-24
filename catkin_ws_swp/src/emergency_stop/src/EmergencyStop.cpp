@@ -324,6 +324,66 @@ namespace emergency_stop {
         }
     }
 
+    void EmergencyStop::projectOnRearAxle(double angle, double distance, double &projAlpha, double &projDist, double offset){
+        double a;
+        double b;
+
+        if (angle >= 0.0 and angle < DEG90INRAD) { // 0 - 90 deg
+            a = sin(angle) * distance;
+            b = cos(angle) * distance;
+            projAlpha = atan(a / (b + offset));
+            projDist = std::sqrt(std::pow(a, 2) + std::pow(b + offset, 2));
+        }
+
+        if (angle >= DEG90INRAD and angle < DEG180INRAD) { // 90 - 180 deg
+            angle = DEG180INRAD - angle;
+            a = sin(angle) * distance;
+            b = cos(angle) * distance;
+            if (b > offset) {
+                projAlpha = (DEG180INRAD - (atan(a / (b - offset))));
+                projDist = std::sqrt(std::pow(a, 2) + std::pow(b - offset, 2));
+            }
+            else if (b < offset) {
+                projAlpha = atan(a / (offset - b));
+                projDist = std::sqrt(std::pow(a, 2) + std::pow(offset - b, 2));
+
+            }
+            else {
+                projAlpha = DEG90INRAD;
+                projDist = a;
+            }
+
+            return;
+        }
+
+        if (angle >= DEG180INRAD and angle < DEG270INRAD) { // 180 - 270 deg
+            angle = angle - DEG180INRAD;
+            a = sin(angle) * distance;
+            b = cos(angle) * distance;
+            if (b > offset) {
+                projAlpha = (DEG180INRAD + atan(a / (b - offset)));
+                projDist = std::sqrt(std::pow(a, 2) + std::pow(b - offset, 2));
+            }
+            else if (b < offset) {
+                projAlpha = (DEG360INRAD - atan(a / (offset - b)));
+                projDist = std::sqrt(std::pow(a, 2) + std::pow(offset - b, 2));
+            }
+            else {
+                projAlpha = DEG270INRAD;
+                projDist = a;
+            }
+        }
+
+        if (angle >= DEG270INRAD and angle < DEG360INRAD) { // 270 - 360 deg
+            angle = DEG360INRAD - angle;
+            a = sin(angle) * distance;
+            b = cos(angle) * distance;
+            projAlpha = (DEG360INRAD - atan(a / (b + offset)));
+            projDist = std::sqrt(std::pow(a, 2) + std::pow(b + offset, 2));
+        }
+    }
+
+
 /*    void EmergencyStop::projectOnRearAxle(float *angle, float *distance, double offset) {
         float tempAlpha = &angle;
         float tempDist = &distance;
@@ -343,8 +403,10 @@ namespace emergency_stop {
     EmergencyStop::getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR,
                                           double turningRadiusOF, Direction direction, Steering steering) {
         // project points on rear axle (working with virtual lidar on middle of rear axle)
-        auto projAlpha = projectOnRearAxleAngle(angle, distance, config.lidar_rear_axle_distance);
-        auto projDist = projectOnRearAxleDist(angle, distance, config.lidar_rear_axle_distance);
+//        auto projAlpha = projectOnRearAxleAngle(angle, distance, config.lidar_rear_axle_distance);
+//        auto projDist = projectOnRearAxleDist(angle, distance, config.lidar_rear_axle_distance);
+        double projAlpha, projDist;
+        projectOnRearAxle(angle, distance, projAlpha, projDist, config.lidar_rear_axle_distance);
 
         if (0 <= projAlpha && projAlpha < DEG90INRAD) {
             return processQuadrantA(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
@@ -859,7 +921,7 @@ namespace emergency_stop {
     bool EmergencyStop::isOnPath(double x, double rIR, double rOF) {
         auto correction = (config.car_width - config.track) / 2;
         return (x > (rIR - correction - config.safety_margin / 2) &&
-                x < (rOF + correction + config.safety_margin / 2 + 0.01));
+                x < (rOF + correction + config.safety_margin / 2 + 0.01)); // ToDo: figure out 0.01 exactly
     }
 
     double EmergencyStop::calculateSafeSpeed(double distance, double deceleration, double targetQuotient) {

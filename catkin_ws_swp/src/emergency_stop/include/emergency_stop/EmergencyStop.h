@@ -108,6 +108,16 @@ namespace emergency_stop {
 
         double getTurningRadius(double steeringAngle);
 
+        double getAlignedAngle(double angle, double coordRot = DEG90INRAD);
+
+        void alignCoordToFront(double &angle, double coordRot=DEG90INRAD);
+
+        std::tuple<double, double> polar2Cart(double r, double theta);
+
+        std::tuple<double, double> cart2Polar(double x, double y);
+
+        double getEuclideanDistance(double x_center, double y_center, double x_obstacle, double y_obstacle);
+
         double calcOffsetAngle(double r, Direction direction);
 
         double calcEffectiveDistance(double angle, double angleOffset, double radius);

@@ -25,7 +25,8 @@ namespace emergency_stop {
             direction = Direction::FORWARD;
         }
 
-        if (config.steering_angle_tolerance >= currentSteeringAngle && currentSteeringAngle >= -config.steering_angle_tolerance) {
+        if (config.steering_angle_tolerance >= currentSteeringAngle &&
+            currentSteeringAngle >= -config.steering_angle_tolerance) {
             steering = Steering::STRAIGHT;
         }
         else{
@@ -37,10 +38,14 @@ namespace emergency_stop {
             }
             turningRadius = getTurningRadius(currentSteeringAngle);
             // inner rear tire
-            turningRadiusIR = turningRadius - (config.track / 2);
-            // outer front tire
-            turningRadiusOF = hypotenuse(turningRadiusIR + config.track, config.wheelbase);
+            turningRadiusIR = turningRadius - (config.car_width / 2); //turningRadius - (config.track / 2);
+            // outer front edge
+            turningRadiusOF = hypotenuse(turningRadiusIR + config.car_width,
+                                         config.lidar_rear_axle_distance + config.forward_minimum_distance);
         }
+
+        //static_cast<double>(direction)
+
 
         auto stopDistance = config.stop_distance;
         auto targetQuotient = config.target_quotient;
@@ -383,14 +388,6 @@ namespace emergency_stop {
         }
     }
 
-
-/*    void EmergencyStop::projectOnRearAxle(float *angle, float *distance, double offset) {
-        float tempAlpha = &angle;
-        float tempDist = &distance;
-        &angle = atan((sin(tempAlpha) * tempDist) / (cos(tempAlpha) * tempDist + offset));
-        &distance = std::sqrt(std::pow(sin(tempAlpha) * tempDist, 2) + std::pow(cos(tempAlpha) * tempDist + offset, 2));
-    }*/
-
     double EmergencyStop::getStraightDistanceToCar(double distanceToLidar, int deg_step) {
         if (deg_step < 90 || deg_step > 270) {
             return (distanceToLidar - config.forward_minimum_distance);
@@ -405,25 +402,40 @@ namespace emergency_stop {
         // project points on rear axle (working with virtual lidar on middle of rear axle)
 //        auto projAlpha = projectOnRearAxleAngle(angle, distance, config.lidar_rear_axle_distance);
 //        auto projDist = projectOnRearAxleDist(angle, distance, config.lidar_rear_axle_distance);
-        double projAlpha, projDist;
-        projectOnRearAxle(angle, distance, projAlpha, projDist, config.lidar_rear_axle_distance);
+        double x_center, y_center, angle_corrected, x_obstacle, y_obstacle;
+        // steering left  -> 1
+        // steering right -> -1
+        x_center = turningRadius * static_cast<double>(steering) * -1;
+        y_center = 0;
+        angle_corrected = getAlignedAngle(angle);
+        std::tie(x_obstacle, y_obstacle) = polar2Cart(distance, angle_corrected);
+        // project on rear axle
+        y_obstacle += config.lidar_rear_axle_distance;
 
-        if (0 <= projAlpha && projAlpha < DEG90INRAD) {
-            return processQuadrantA(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-                                    steering);
+        // check distance from object point to center of turning circle
+        double distanceFromCenter = getEuclideanDistance(x_center, y_center, x_obstacle, y_obstacle);
+        if(distanceFromCenter > turningRadiusIR  && distanceFromCenter < turningRadiusOF){
+            return; // ToDo: some distance measure
         }
-        if (DEG90INRAD <= projAlpha && projAlpha < DEG180INRAD) {
-            return processQuadrantB(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-                                    steering);
-        }
-        if (DEG180INRAD <= projAlpha && projAlpha < DEG270INRAD) {
-            return processQuadrantC(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-                                    steering);
-        }
-        if (DEG270INRAD <= projAlpha && projAlpha < DEG360INRAD) {
-            return processQuadrantD(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-                                    steering);
-        }
+//        double projAlpha, projDist;
+//        projectOnRearAxle(angle, distance, projAlpha, projDist, config.lidar_rear_axle_distance);
+//
+//        if (0 <= projAlpha && projAlpha < DEG90INRAD) {
+//            return processQuadrantA(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
+//                                    steering);
+//        }
+//        if (DEG90INRAD <= projAlpha && projAlpha < DEG180INRAD) {
+//            return processQuadrantB(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
+//                                    steering);
+//        }
+//        if (DEG180INRAD <= projAlpha && projAlpha < DEG270INRAD) {
+//            return processQuadrantC(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
+//                                    steering);
+//        }
+//        if (DEG270INRAD <= projAlpha && projAlpha < DEG360INRAD) {
+//            return processQuadrantD(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
+//                                    steering);
+//        }
         return std::numeric_limits<double>::infinity();
     }
 
@@ -916,6 +928,33 @@ namespace emergency_stop {
 
     double EmergencyStop::getTurningRadius(double steeringAngle) {
         return config.wheelbase / abs(tan(steeringAngle));
+    }
+
+    /*
+     * rotate coordinate system, s.t. 0 degrees are straight ahead;
+     * assumes that lidar is installed, s.t. 0 degrees are straight ahead
+     */
+    void EmergencyStop::alignCoordToFront(double &angle, double coordRot = DEG90INRAD) {
+        tmp = fmod(angle + coordRot, 2 * M_PI);
+        angle = tmp;
+    }
+
+    double EmergencyStop::getAlignedAngle(double angle, double coordRot = DEG90INRAD) {
+        return fmod(angle + coordRot, 2 * M_PI);
+    }
+
+    std::tuple<double, double> EmergencyStop::polar2Cart(double r, double theta) {
+        return std::make_tuple(r * cos(theta), r * sin(theta));
+    }
+
+    std::tuple<double, double> EmergencyStop::cart2Polar(double x, double y) {
+        double theta = fmod(atan2(y, x), 2*M_PI);
+        double r = hypotenuse(x, y);
+        return std::make_tuple(r, theta);
+    }
+
+    double EmergencyStop::getEuclideanDistance(x_center, y_center, x_obstacle, y_obstacle) {
+        return hypotenuse(x_center - x_obstacle, y_center - y_obstacle);
     }
 
     bool EmergencyStop::isOnPath(double x, double rIR, double rOF) {

@@ -5,11 +5,6 @@ namespace emergency_stop {
 
     EmergencyStop::~EmergencyStop() = default;
 
-    const double DEG90INRAD =  M_PI * 0.5; // 1.5707963267948966;
-    const double DEG180INRAD = M_PI;       // 3.1415926535897931;
-    const double DEG270INRAD = M_PI * 1.5; // 4.7123889803846897;
-    const double DEG360INRAD = M_PI * 2;   // 6.2831853071795862;
-
     void EmergencyStop::setConfig(emergency_stop::EmergencyStopConfig &config) { this->config = config; }
 
     void EmergencyStop::checkEmergencyStop(const sensor_msgs::LaserScanConstPtr &scan) {
@@ -231,163 +226,6 @@ namespace emergency_stop {
         return std::sqrt(std::pow(a, 2) + std::pow(b, 2));
     }
 
-    double EmergencyStop::projectOnRearAxleAngle(double angle, double distance, double offset) {
-
-        double a;
-        double b;
-
-        if (angle >= 0.0 and angle < DEG90INRAD) { // 0 - 90 deg
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            return atan(a / (b + offset));
-        }
-
-        else if (angle >= DEG90INRAD and angle < DEG180INRAD) { // 90 - 180 deg
-            angle = DEG180INRAD - angle;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            if (b > offset) {
-                return (DEG180INRAD - (atan(a / (b - offset))));
-            }
-            else if (b < offset) {
-                return atan(a / (offset - b));
-            }
-            else {
-                return DEG90INRAD;
-            }
-        }
-
-        else if (angle >= DEG180INRAD and angle < DEG270INRAD) { // 180 - 270 deg
-            angle = angle - DEG180INRAD;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            if (b > offset) {
-                return (DEG180INRAD + atan(a / (b - offset)));
-            }
-            else if (b < offset) {
-                return (DEG360INRAD - atan(a / (offset - b)));
-            }
-            else {
-                return DEG270INRAD;
-            }
-        }
-
-        else { //if (angle >= DEG270INRAD and angle < DEG360INRAD) { // 270 - 360 deg
-            angle = DEG360INRAD - angle;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            return (DEG360INRAD - atan(a / (b + offset)));
-        }
-    }
-
-    double EmergencyStop::projectOnRearAxleDist(double angle, double distance, double offset) {
-
-        double a;
-        double b;
-
-        if (angle >= 0.0 and angle < DEG90INRAD) { // 0 - 90 deg
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            return std::sqrt(std::pow(a, 2) + std::pow(b + offset, 2));
-        }
-
-        if (angle >= DEG90INRAD and angle < DEG180INRAD) { // 90 - 180 deg
-            angle = DEG180INRAD - angle;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            if (b > offset) {
-                return std::sqrt(std::pow(a, 2) + std::pow(b - offset, 2));
-            }
-            else if (b < offset) {
-                return std::sqrt(std::pow(a, 2) + std::pow(offset - b, 2));
-            }
-            else {
-                return a;
-            }
-        }
-
-        if (angle >= DEG180INRAD and angle < DEG270INRAD) { // 180 - 270 deg
-            angle = angle - DEG180INRAD;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            if (b > offset) {
-                return std::sqrt(std::pow(a, 2) + std::pow(b - offset, 2));
-            }
-            else if (b < offset) {
-                return std::sqrt(std::pow(a, 2) + std::pow(offset - b, 2));
-            }
-            else {
-                return a;
-            }
-        }
-
-        if (angle >= DEG270INRAD and angle < DEG360INRAD) { // 270 - 360 deg
-            angle = DEG360INRAD - angle;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            return std::sqrt(std::pow(a, 2) + std::pow(b + offset, 2));
-        }
-    }
-
-    void EmergencyStop::projectOnRearAxle(double angle, double distance, double &projAlpha, double &projDist, double offset){
-        double a;
-        double b;
-
-        if (angle >= 0.0 and angle < DEG90INRAD) { // 0 - 90 deg
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            projAlpha = atan(a / (b + offset));
-            projDist = std::sqrt(std::pow(a, 2) + std::pow(b + offset, 2));
-        }
-
-        if (angle >= DEG90INRAD and angle < DEG180INRAD) { // 90 - 180 deg
-            angle = DEG180INRAD - angle;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            if (b > offset) {
-                projAlpha = (DEG180INRAD - (atan(a / (b - offset))));
-                projDist = std::sqrt(std::pow(a, 2) + std::pow(b - offset, 2));
-            }
-            else if (b < offset) {
-                projAlpha = atan(a / (offset - b));
-                projDist = std::sqrt(std::pow(a, 2) + std::pow(offset - b, 2));
-
-            }
-            else {
-                projAlpha = DEG90INRAD;
-                projDist = a;
-            }
-
-            return;
-        }
-
-        if (angle >= DEG180INRAD and angle < DEG270INRAD) { // 180 - 270 deg
-            angle = angle - DEG180INRAD;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            if (b > offset) {
-                projAlpha = (DEG180INRAD + atan(a / (b - offset)));
-                projDist = std::sqrt(std::pow(a, 2) + std::pow(b - offset, 2));
-            }
-            else if (b < offset) {
-                projAlpha = (DEG360INRAD - atan(a / (offset - b)));
-                projDist = std::sqrt(std::pow(a, 2) + std::pow(offset - b, 2));
-            }
-            else {
-                projAlpha = DEG270INRAD;
-                projDist = a;
-            }
-        }
-
-        if (angle >= DEG270INRAD and angle < DEG360INRAD) { // 270 - 360 deg
-            angle = DEG360INRAD - angle;
-            a = sin(angle) * distance;
-            b = cos(angle) * distance;
-            projAlpha = (DEG360INRAD - atan(a / (b + offset)));
-            projDist = std::sqrt(std::pow(a, 2) + std::pow(b + offset, 2));
-        }
-    }
-
     double EmergencyStop::getStraightDistanceToCar(double distanceToLidar, int deg_step) {
         if (deg_step < 90 || deg_step > 270) {
             return (distanceToLidar - config.forward_minimum_distance);
@@ -399,466 +237,70 @@ namespace emergency_stop {
     double
     EmergencyStop::getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR,
                                           double turningRadiusOF, Direction direction, Steering steering) {
-        // project points on rear axle (working with virtual lidar on middle of rear axle)
-//        auto projAlpha = projectOnRearAxleAngle(angle, distance, config.lidar_rear_axle_distance);
-//        auto projDist = projectOnRearAxleDist(angle, distance, config.lidar_rear_axle_distance);
-        double x_center, y_center, angle_corrected, x_obstacle, y_obstacle;
+        // center -> center of turning circle
+        double x_center, y_center, x_obstacle, y_obstacle, angle_corrected;
         // steering left  -> 1
         // steering right -> -1
         x_center = turningRadius * static_cast<double>(steering) * -1;
         y_center = 0;
         angle_corrected = getAlignedAngle(angle);
         std::tie(x_obstacle, y_obstacle) = polar2Cart(distance, angle_corrected);
-        // project on rear axle
+        // project on rear axle (working with virtual lidar on middle of rear axle)
         y_obstacle += config.lidar_rear_axle_distance;
 
-        // check distance from object point to center of turning circle
+        // check distance from potential obstacle to center of turning circle
         double distanceFromCenter = getEuclideanDistance(x_center, y_center, x_obstacle, y_obstacle);
-        if(distanceFromCenter > turningRadiusIR  && distanceFromCenter < turningRadiusOF){
-            return; // ToDo: some distance measure
+
+        if (isOnPath(distanceFromCenter, turningRadiusIR, turningRadiusOF)) {
+            std::vector<double> vecCenter, vecObstacle;
+            vecCenter[0] = 0 - x_center;
+            vecCenter[1] = 0 - y_center;
+            vecObstacle[0] = x_obstacle - x_center;
+            vecObstacle[1] = y_obstacle - y_center;
+
+            double angleOfDistance;
+            if ((direction == Direction::FORWARD && steering == Steering::RIGHT) ||
+                (direction == Direction::BACKWARD && steering == Steering::LEFT)) {
+                angleOfDistance = getAngleBetweenVectors(vecCenter, vecObstacle);
+            } else if ((direction == Direction::FORWARD && steering == Steering::LEFT) ||
+                       (direction == Direction::BACKWARD && steering == Steering::RIGHT)) {
+                angleOfDistance = getAngleBetweenVectors(vecObstacle, vecCenter);
+            } else {
+                return std::numeric_limits<double>::infinity();
+            }
+
+            auto angleOffset = calcOffsetAngle(distanceFromCenter, turningRadiusIR, direction);
+            auto effectiveDistance = calcEffectiveDistance(angleOfDistance, angleOffset, distanceFromCenter);
+            return effectiveDistance;
         }
-//        double projAlpha, projDist;
-//        projectOnRearAxle(angle, distance, projAlpha, projDist, config.lidar_rear_axle_distance);
-//
-//        if (0 <= projAlpha && projAlpha < DEG90INRAD) {
-//            return processQuadrantA(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-//                                    steering);
-//        }
-//        if (DEG90INRAD <= projAlpha && projAlpha < DEG180INRAD) {
-//            return processQuadrantB(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-//                                    steering);
-//        }
-//        if (DEG180INRAD <= projAlpha && projAlpha < DEG270INRAD) {
-//            return processQuadrantC(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-//                                    steering);
-//        }
-//        if (DEG270INRAD <= projAlpha && projAlpha < DEG360INRAD) {
-//            return processQuadrantD(projAlpha, projDist, turningRadius, turningRadiusIR, turningRadiusOF, direction,
-//                                    steering);
-//        }
         return std::numeric_limits<double>::infinity();
-    }
-
-    double
-    EmergencyStop::processQuadrantA(double angle, double dist, double r, double rIR, double rOF, Direction direction,
-                                    Steering steering) {
-        auto alpha = DEG90INRAD - angle;
-        auto a = dist * sin(alpha);
-        auto b = dist * cos(alpha);
-        double x;
-        double alpha_;
-        double alpha_eff;
-        double betaOffset;
-        bool onPath = false;
-
-        if (direction == Direction::FORWARD && steering == Steering::LEFT) {
-            if (b < r) {
-                x = hypotenuse(a, r - b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            } else if (b > r) {
-                x = hypotenuse(a, b - r);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG180INRAD - alpha_;
-                }
-            } else {
-                x = a;
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = DEG90INRAD;
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
-            if (b < (config.car_width / 2)) {
-                x = hypotenuse(a, r + b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
-            if (b < r) {
-                x = hypotenuse(a, r - b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG360INRAD - alpha_;
-                }
-            } else if (b > r) {
-                x = hypotenuse(a, b - r);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG180INRAD + alpha_;
-                }
-            } else {
-                x = a;
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = DEG270INRAD;
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
-            if (b < r && b > (config.car_width / 2)) {
-                x = hypotenuse(a, r + b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (onPath) {
-            return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, x), 0,
-                                           std::numeric_limits<double>::infinity());
-        } else {
-            return std::numeric_limits<double>::infinity();
-        }
-    }
-
-    double
-    EmergencyStop::processQuadrantB(double angle, double dist, double r, double rIR, double rOF, Direction direction,
-                                    Steering steering) {
-        auto alpha = angle - DEG90INRAD;
-        auto a = dist * sin(alpha);
-        auto b = dist * cos(alpha);
-        double x;
-        double alpha_;
-        double alpha_eff;
-        double betaOffset;
-        bool onPath = false;
-
-        /*if (direction == Direction::FORWARD && steering == Steering::LEFT) {
-            if (b < r) {
-                x = hypotenuse(a, r - b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG360INRAD - alpha_;
-                }
-            } else if (b > r) {
-                x = hypotenuse(a, b - r);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG180INRAD + alpha_;
-                }
-            } else {
-                x = a;
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = DEG270INRAD;
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }*/
-
-        /*
-        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
-            // do nothing
-        }
-        */
-
-        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
-            if (b < r) {
-                x = hypotenuse(a, r - b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            } else if (b > r) {
-                x = hypotenuse(a, b - r);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG180INRAD - alpha_;
-                }
-            } else {
-                x = a;
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = DEG90INRAD;
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
-            if (b < r) {
-                x = hypotenuse(a, r + b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (onPath) {
-            return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, x), 0,
-                                           std::numeric_limits<double>::infinity());
-        } else {
-            return std::numeric_limits<double>::infinity();
-        }
-    }
-
-    double
-    EmergencyStop::processQuadrantC(double angle, double dist, double r, double rIR, double rOF, Direction direction,
-                                    Steering steering) {
-        auto alpha = DEG270INRAD - angle;
-        auto a = dist * sin(alpha);
-        auto b = dist * cos(alpha);
-        double x;
-        double alpha_;
-        double alpha_eff;
-        double betaOffset;
-        bool onPath = false;
-
-        /*
-        if (direction == Direction::FORWARD && steering == Steering::LEFT) {
-            // do nothing
-        }*/
-
-        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
-            if (b < r) {
-                x = hypotenuse(a, r - b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG360INRAD - alpha_;
-                }
-            } else if (b > r) {
-                x = hypotenuse(a, b - r);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG180INRAD + alpha_;
-                }
-            } else {
-                x = a;
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = DEG270INRAD;
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
-            if (b < r) {
-                x = hypotenuse(a, r + b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
-            if (b < r) {
-                x = hypotenuse(a, r - b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            } else if (b > r) {
-                x = hypotenuse(a, b - r);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG180INRAD - alpha_;
-                }
-            } else {
-                x = a;
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = DEG90INRAD;
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (onPath) {
-            return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, x), 0,
-                                           std::numeric_limits<double>::infinity());
-        } else {
-            return std::numeric_limits<double>::infinity();
-        }
-    }
-
-    double
-    EmergencyStop::processQuadrantD(double angle, double dist, double r, double rIR, double rOF, Direction direction,
-                                    Steering steering) {
-        auto alpha = angle - DEG270INRAD;
-        auto a = dist * sin(alpha);
-        auto b = dist * cos(alpha);
-        double x;
-        double alpha_;
-        double alpha_eff;
-        double betaOffset;
-        bool onPath = false;
-
-        if (direction == Direction::FORWARD && steering == Steering::LEFT) {
-            if (b < (config.car_width / 2)) {
-                x = hypotenuse(a, r + b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
-            if (b < r) {
-                x = hypotenuse(a, r - b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            } else if (b > r) {
-                x = hypotenuse(a, b - r);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG180INRAD - alpha_;
-                }
-            } else {
-                x = a;
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = DEG90INRAD;
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
-            if (b < r && b > (config.car_width / 2)) {
-                x = hypotenuse(a, r + b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
-            if (b < r) {
-                x = hypotenuse(a, r - b);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG360INRAD - alpha_;
-                }
-            } else if (b > r) {
-                x = hypotenuse(a, b - r);
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = asin(a / x);
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = DEG180INRAD + alpha_;
-                }
-            } else {
-                x = a;
-                if (isOnPath(x, rIR, rOF)) {
-                    onPath = true;
-                    alpha_ = DEG270INRAD;
-                    betaOffset = calcOffsetAngle(r, direction);
-                    alpha_eff = alpha_;
-                }
-            }
-        }
-
-        if (onPath) {
-            return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, x), 0,
-                                           std::numeric_limits<double>::infinity());
-        } else {
-            return std::numeric_limits<double>::infinity();
-        }
     }
 
     double EmergencyStop::calcEffectiveDistance(double angle, double angleOffset, double radius) {
         return (angle - angleOffset) * radius;
     }
 
-/*    double EmergencyStop::calcOffsetAngle(double r, Direction direction) {
-        // assumes R as r:
-        auto a = r;
-        double b_;
-        double gamma;
-        if (direction == Direction::FORWARD) {
-            b_ = config.forward_minimum_distance + config.lidar_rear_axle_distance;
-            gamma = DEG90INRAD - config.half_angle_front_init_proj;
-        } else {
-            b_ = config.reverse_minimum_distance - config.lidar_rear_axle_distance;
-            gamma = DEG90INRAD - config.half_angle_back_init_proj;
-        }
-        auto b = hypotenuse(config.car_width / 2, b_);
-        auto c_squared = std::pow(a, 2) + std::pow(b, 2) - (2 * a * b * cos(gamma));
-        auto c = std::sqrt(c_squared);
-        return acos((std::pow(a, 2) + std::pow(c, 2) - std::pow(b, 2)) / (2 * a * c));
-    }*/
+    double EmergencyStop::getAngleBetweenVectors(std::vector<double> a, std::vector<double> b) {
+        return fmod(atan2(a.at(1), a.at(0)) - atan2(b.at(1), b.at(0)), 2 * M_PI);
+    }
 
-    double EmergencyStop::calcOffsetAngle(double r, Direction direction) {
-        // assumes R_ir as r:
-        auto a = r - (config.car_width / 2 - config.track / 2);
-        double b;
+    double EmergencyStop::calcOffsetAngleFront(double distance_from_center, Direction direction) {
+        double numerator;
         if (direction == Direction::FORWARD) {
-            b = config.forward_minimum_distance + config.lidar_rear_axle_distance;
+            numerator = config.forward_minimum_distance + config.lidar_rear_axle_distance;
         } else {
-            b = config.reverse_minimum_distance - config.lidar_rear_axle_distance;
+            numerator = config.reverse_minimum_distance - config.lidar_rear_axle_distance;
         }
-        auto c = hypotenuse(a, b);
-        return asin(b/c);
+        return asin(numerator / distance_from_center);
+    }
+
+    double EmergencyStop::calcOffsetAngleSide(double distance_from_center, double r_ir) {
+        return acos(r_ir / distance_from_center);
+    }
+
+    double EmergencyStop::calcOffsetAngle(double distance_from_center, double r_ir, Direction direction) {
+        return std::min(calcOffsetAngleSide(distance_from_center, r_ir),
+                        calcOffsetAngleFront(distance_from_center, direction));
     }
 
     double EmergencyStop::getExactDistanceToCar(double rad, double dist) {
@@ -953,14 +395,14 @@ namespace emergency_stop {
         return std::make_tuple(r, theta);
     }
 
-    double EmergencyStop::getEuclideanDistance(x_center, y_center, x_obstacle, y_obstacle) {
+    double EmergencyStop::getEuclideanDistance(double x_center, double y_center, double x_obstacle, double y_obstacle) {
         return hypotenuse(x_center - x_obstacle, y_center - y_obstacle);
     }
 
     bool EmergencyStop::isOnPath(double x, double rIR, double rOF) {
-        auto correction = (config.car_width - config.track) / 2;
-        return (x > (rIR - correction - config.safety_margin / 2) &&
-                x < (rOF + correction + config.safety_margin / 2 + 0.01)); // ToDo: figure out 0.01 exactly
+        //auto correction = (config.car_width - config.track) / 2;
+        return (x > (rIR - config.safety_margin / 2) &&  // - correction
+                x < (rOF + config.safety_margin / 2)); // ToDo: figure out 0.01 exactly  // + correction + 0.01
     }
 
     double EmergencyStop::calculateSafeSpeed(double distance, double deceleration, double targetQuotient) {

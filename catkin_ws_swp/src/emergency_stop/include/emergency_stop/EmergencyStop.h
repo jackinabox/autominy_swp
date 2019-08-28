@@ -7,12 +7,19 @@
 #include <autominy_msgs/SteeringAngle.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/String.h>
+#include <algorithm>
 #include <limits>
 #include <math.h>
 #include <string>
+#include <vector>
 #include <boost/algorithm/clamp.hpp>
 
 namespace emergency_stop {
+
+    const double DEG90INRAD =  M_PI * 0.5; // 1.5707963267948966;
+    const double DEG180INRAD = M_PI;       // 3.1415926535897931;
+    const double DEG270INRAD = M_PI * 1.5; // 4.7123889803846897;
+    const double DEG360INRAD = M_PI * 2;   // 6.2831853071795862;
 
     enum class Direction : int8_t {
         FORWARD = 1,
@@ -86,21 +93,7 @@ namespace emergency_stop {
 
         double hypotenuse(double a, double b);
 
-        double projectOnRearAxleAngle(double angle, double distance, double offset); // offset=config.lidar_rear_axle_distance
-
-        double projectOnRearAxleDist(double angle, double distance, double offset); // offset=config.lidar_rear_axle_distance
-
-        void projectOnRearAxle(double angle, double distance, double &projAlpha, double &projDist, double offset); // offset=config.lidar_rear_axle_distance
-
         double getDistanceToCarOnPath(double angle, double distance, double turningRadius, double turningRadiusIR, double turningRadiusOF, Direction direction, Steering steering);
-
-        double processQuadrantA(double angle, double dist, double r, double rIR, double rOF, Direction direction, Steering steering);
-
-        double processQuadrantB(double angle, double dist, double r, double rIR, double rOF, Direction direction, Steering steering);
-
-        double processQuadrantC(double angle, double dist, double r, double rIR, double rOF, Direction direction, Steering steering);
-
-        double processQuadrantD(double angle, double dist, double r, double rIR, double rOF, Direction direction, Steering steering);
 
         double getStraightDistanceToCar(double distanceToLidar, int deg_step);
 
@@ -110,7 +103,7 @@ namespace emergency_stop {
 
         double getAlignedAngle(double angle, double coordRot = DEG90INRAD);
 
-        void alignCoordToFront(double &angle, double coordRot=DEG90INRAD);
+        void alignCoordToFront(double &angle, double coordRot = DEG90INRAD);
 
         std::tuple<double, double> polar2Cart(double r, double theta);
 
@@ -118,7 +111,13 @@ namespace emergency_stop {
 
         double getEuclideanDistance(double x_center, double y_center, double x_obstacle, double y_obstacle);
 
-        double calcOffsetAngle(double r, Direction direction);
+        double getAngleBetweenVectors(std::vector<double> a, std::vector<double> b);
+
+        double calcOffsetAngleFront(double distance_from_center, Direction direction);
+
+        double calcOffsetAngleSide(double distance_from_center, double r_ir);
+
+        double calcOffsetAngle(double distance_from_center, double r_ir, Direction direction);
 
         double calcEffectiveDistance(double angle, double angleOffset, double radius);
 

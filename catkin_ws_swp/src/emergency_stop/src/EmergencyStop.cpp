@@ -479,7 +479,7 @@ namespace emergency_stop {
             }
         }
 
-        if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
+        /*if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -505,7 +505,7 @@ namespace emergency_stop {
                     alpha_eff = alpha_;
                 }
             }
-        }
+        }*/
 
         if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
             if (b < r && b > (config.car_width / 2)) {
@@ -638,7 +638,7 @@ namespace emergency_stop {
             // do nothing
         }*/
 
-        if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
+        /*if (direction == Direction::FORWARD && steering == Steering::RIGHT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -664,7 +664,7 @@ namespace emergency_stop {
                     alpha_eff = alpha_;
                 }
             }
-        }
+        }*/
 
         if (direction == Direction::BACKWARD && steering == Steering::LEFT) {
             if (b < r) {
@@ -778,7 +778,7 @@ namespace emergency_stop {
             }
         }
 
-        if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
+        /*if (direction == Direction::BACKWARD && steering == Steering::RIGHT) {
             if (b < r) {
                 x = hypotenuse(a, r - b);
                 if (isOnPath(x, rIR, rOF)) {
@@ -804,7 +804,7 @@ namespace emergency_stop {
                     alpha_eff = alpha_;
                 }
             }
-        }
+        }*/
 
         if (onPath) {
             return boost::algorithm::clamp(calcEffectiveDistance(alpha_eff, betaOffset, x), 0,
